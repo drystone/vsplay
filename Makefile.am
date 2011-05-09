@@ -1,0 +1,2 @@
+SUBDIRS =  libs apps
+EXTRA_DIST = README.LIB TODO

@@ -1,0 +1,15 @@
+* -k <num> starts at frame num
+
+++++++
+
+* xsplay builds if qt is available
+
++++++
+
+* splay -f displays information on frame and time (played and remaining).
+
+* SIGINT (eg. Control-c) skips to next song.  Two SIGINTs quits.
+
+* Handles id3 tags version 1 and 2 with id3lib.
+
+* New maintainer

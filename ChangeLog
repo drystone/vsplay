@@ -1,0 +1,88 @@
+2001-05-06  Mikael Hedin  <mikael.hedin@irf.se>
+
+	* Release 0.9.5.2 (thanks Kenan Esau <kenan.esau@conan.de>)
+
+	* libs/mpegsound.h: Added #include <string.h>
+
+2001-03-19  Mikael Hedin  <mikael.hedin@irf.se>
+
+	* Release 0.9.5.1 (thanks for the report, XX)
+	
+	* apps/splay.cc: Forgot to #include <stdlib.h>
+	
+2001-03-17  Mikael Hedin  <mikael.hedin@irf.se>
+
+	* Release 0.9.5.
+
+	* apps/splay.cc: Added  option "-k num" to skip frames at the
+	beginning. 
+
+	* libs/fileplayer.cc: Added option to start att specified frame.
+
+2001-03-03  Mikael Hedin  <mikael.hedin@irf.se>
+
+	* apps/splay.cc: Added a char** with genre names to print instead
+	of the numbers.  
+
+	* I think this will become version 1.0.  And then I'm done with
+	this program:)
+
+2001-02-20  Mikael Hedin  <mikael.hedin@irf.se>
+
+	* Release 0.9.3.
+	
+	* Fixed make files to build xsplay if qt is available.
+	
+	* libs/fileplayer.cc (playing): Fixed frameinfo to display correct
+	time independent on encoding frequency etc.
+	
+2001-02-15  Mikael Hedin  <mikael.hedin@irf.se>
+
+	* Removed wav support.
+
+	* Release 0.9.2.
+
+	* libs/mpegtoraw.cc: Added patch from Rob McMullen <rob@akvo.com>
+	to skip ID3 headers.  Otherwise some ID3 headers with syncs in
+	them confused splay.  Don't know it this is a bug in splay or the
+	ID3 tag of the specific files, but this fixes the problem. 
+
+	* Fixed two items on the TODO list:
+
+	* Display frame info with -f
+
+	* Try to open /dev/sound/dsp if /dev/dsp fails (for devfs)
+
+2001-01-30  Mikael Hedin  <mikael.hedin@irf.se>
+
+	* Bumped version to 0.9.1
+
+	* New automake system that I understand.  Goes with a reorder of
+	the directory structure.
+
+	* Added TODO file
+
+
+2000-12-21  Mikael Hedin  <mikael.hedin@irf.se>
+
+	* src/splay/splay.cc: Added function to skip to next song by
+	Control-c (ie SIGINT) vhen playing several songs.
+
+	* Removed internal Id3 handling, and added use of libid3.
+
+	* Changed -vv to show id3-info,and -vvv the technical info.
+
+	* New maintaioner as above.
+
+
+===Older entries below
+	
+Sat Aug 2
+
+  * Optimize MPEG-2 in mpeglayer3.cc
+  * Restructured
+	split splay and xsplay
+	src/functions -> src/common
+	removing some functions (e.g. Setthreadstore() ...)
+
+
