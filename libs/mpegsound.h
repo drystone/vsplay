@@ -11,7 +11,6 @@
 /************************************/
 #include <stdio.h>
 #include <sys/types.h>
-#include <string.h>
 
 #ifdef PTHREADEDMPEG
 #ifdef HAVE_PTHREAD_H
@@ -230,7 +229,7 @@ public:
   Soundplayer() {__errorcode=SOUND_ERROR_OK;};
   virtual ~Soundplayer();
 
-  virtual bool initialize(char *filename)                       =0;
+  virtual bool initialize(const char *filename)                       =0;
   virtual void abort(void);
   virtual int  getprocessed(void);
 
@@ -255,7 +254,7 @@ class Rawtofile : public Soundplayer
 public:
   ~Rawtofile();
 
-  bool initialize(char *filename);
+  bool initialize(const char *filename);
   bool setsoundtype(int stereo,int samplesize,int speed);
   bool putblock(void *buffer,int size);
 
@@ -270,7 +269,7 @@ class Rawplayer : public Soundplayer
 public:
   ~Rawplayer();
 
-  bool initialize(char *filename);
+  bool initialize(const char *filename);
   void abort(void);
   int  getprocessed(void);
 
@@ -284,7 +283,7 @@ public:
   void setquota(int q){quota=q;};
   int  getquota(void) {return quota;};
 
-  static char *defaultdevice;
+  static const char *defaultdevice;
   static int  setvolume(int volume);
 
 private:
@@ -573,7 +572,7 @@ public:
 
   int geterrorcode(void)        {return __errorcode;};
 
-  virtual bool openfile(char *filename,char *device)=0;
+  virtual bool openfile(char *filename,const char *device)=0;
   virtual void setforcetomono(bool flag)            =0;
   virtual bool playing(int verbose,bool frameinfo, int startframe)                 =0;
 
@@ -593,7 +592,7 @@ public:
   Mpegfileplayer();
   ~Mpegfileplayer();
 
-  bool openfile(char *filename,char *device);
+  bool openfile(char *filename,const char *device);
   void setforcetomono(bool flag);
   void setdownfrequency(int value);
   bool playing(int verbose, bool frameinfo, int startframe);

@@ -9,14 +9,15 @@
 #include "config.h"
 #endif
 
-#include <string.h>
-#include <iostream.h>
+#include <iostream>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
 
 #include "mpegsound.h"
+
+using namespace std;
 
 // File player superclass
 Fileplayer::Fileplayer()
@@ -43,7 +44,7 @@ Mpegfileplayer::~Mpegfileplayer()
   if(server)delete server;
 }
 
-bool Mpegfileplayer::openfile(char *filename,char *device)
+bool Mpegfileplayer::openfile(char *filename,const char *device)
 {
 // Player
   if(device==NULL){
@@ -188,7 +189,7 @@ bool Mpegfileplayer::playingwiththread(int verbose,bool frameinfo,
 
 void Mpegfileplayer::showverbose(int )
 {
-  static char *modestring[4]={"stereo","joint stereo","dual channel","mono"};
+  static const char *modestring[4]={"stereo","joint stereo","dual channel","mono"};
 
   fprintf(stderr,"\tMPEG-%d Layer %d, %s,\n\t%dHz%s, %dkbit/s, ",
 	  server->getversion()+1,

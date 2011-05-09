@@ -16,20 +16,22 @@
 
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <iostream.h>
+#include <iostream>
 
 #ifdef HAVE_LIBID3
 #include <id3/tag.h>
 #include <id3/misc_support.h>
 #endif /* HAVE_LIBID3 */
 
-#include <iomanip.h>
+#include <iomanip>
 
 #include "mpegsound.h"
 
 #include "splay.h"
 
-static char *help=
+using namespace std;
+
+static const char *help=
 "\t-2 : playing with half frequency.\n"
 "\t-e : exit when playing is done. (only XSPLAY)\n"
 "\t-f : display frame and time info (played and remaining).\n"
@@ -89,64 +91,8 @@ inline const char * nn(const char* str)
 
 #ifdef HAVE_LIBID3
 
-//List of ID3 genre names, copied from xmms.org
-const char *ID3_gen_list[255] =
-  {
-    //0-24
-    "Blues", "Classic Rock", "Country", "Dance", "Disco", 
-    "Funk", "Grunge", "Hip-Hop", "Jazz", "Metal",
-    "New Age", "Oldies", "Other", "Pop", "R&B",
-    "Rap", "Reggae", "Rock", "Techno", "Industrial",
-    "Alternative", "Ska", "Death Metal", "Pranks", "Soundtrack",
-    //25-49
-    "Euro-Techno", "Ambient", "Trip-Hop", "Vocal", "Jazz+Funk",
-    "Fusion", "Trance", "Classical", "Instrumental", "Acid",
-    "House", "Game", "Sound Clip", "Gospel", "Noise",
-    "Alt", "Bass", "Soul", "Punk", "Space",
-    "Meditative", "Instrumental Pop", "Instrumental Rock", "Ethnic", "Gothic",
-    //50-74
-    "Darkwave", "Techno-Industrial", "Electronic", "Pop-Folk", "Eurodance",
-    "Dream", "Southern Rock", "Comedy", "Cult", "Gangsta Rap",
-    "Top 40", "Christian Rap", "Pop/Funk", "Jungle", "Native American",
-    "Cabaret", "New Wave", "Psychedelic", "Rave", "Showtunes",
-    "Trailer", "Lo-Fi", "Tribal", "Acid Punk", "Acid Jazz",
-    //75-99
-    "Polka", "Retro", "Musical", "Rock & Roll", "Hard Rock",
-    "Folk", "Folk/Rock", "National Folk", "Swing", "Fast-Fusion",
-    "Bebob", "Latin", "Revival", "Celtic", "Bluegrass",
-    "Avantgarde", "Gothic Rock", "Progressive Rock", "Psychedelic Rock", "Symphonic Rock",
-    "Slow Rock", "Big Band", "Chorus", "Easy Listening", "Acoustic",
-    //100-124
-    "Humour", "Speech", "Chanson", "Opera", "Chamber Music",
-    "Sonata", "Symphony", "Booty Bass", "Primus", "Porn Groove",
-    "Satire", "Slow Jam", "Club", "Tango", "Samba",
-    "Folklore", "Ballad", "Power Ballad", "Rhythmic Soul", "Freestyle",
-    "Duet", "Punk Rock", "Drum Solo", "A Cappella", "Euro-House",
-    //125-149
-    "Dance Hall", "Goa", "Drum & Bass", "Club-House", "Hardcore",
-    "Terror", "Indie", "BritPop", "Negerpunk", "Polsk Punk",
-    "Beat", "Christian Gangsta Rap", "Heavy Metal", "Black Metal", "Crossover",
-    "Contemporary Christian", "Christian Rock", "Merengue", "Salsa", "Thrash Metal",
-    "Anime", "JPop", "Synthpop"
-};
-
 ostream& operator<<(ostream& s, const ID3_Tag* tag )
 {
-  /* this gets all frames, but the info is rather difficult to get,
-     just assume all is ID3FN_TEXT here and hope we get the most...
-  */
-  /*
-  size_t max = tag->NumFrames();
-  // s << "frames: " << max << endl;
-  for ( size_t n=0; n<max ; n++){
-    if ( ID3_Frame* frame = (*tag)[n] ){
-      s << "@@@" << frame->GetDescription() << " " <<
-	ID3_GetString(frame,ID3FN_TEXT) << endl;
-    }
-  }
-  */
-
-
   // Print just what we want...
   s.setf(ios::left);  // The filled fields get the text to the left
   s << 
@@ -156,40 +102,42 @@ ostream& operator<<(ostream& s, const ID3_Tag* tag )
     "Album: " << nn(ID3_GetAlbum(tag)) << 
     endl ; 
   
+
   s << 
-    "Genre : " << setw(18) << nn(ID3_gen_list[ID3_GetGenreNum(tag)]) << 
+    "Genre : " << setw(18) << nn(ID3_GetGenre(tag)) << 
     "Track: " << setw(5) << ID3_GetTrackNum(tag) << 
     "Year: " <<  setw(6) << nn(ID3_GetYear(tag)); 
-//   if ( ID3_GetComment(tag) ){
-//     s << endl << "Comment:" << nn(ID3_GetComment(tag)) <<
-//       nn(ID3_GetLyricist(tag)) << nn(ID3_GetLyrics(tag));
-//   } 
 
   return s;
 }
+
 #endif /* HAVE_LIBID3 */
 
 static void play(char *filename)
 {
   if( splay_verbose-- )
     cout << filename << ":" << endl;
+
+#ifdef HAVE_LIBID3
+
   if( splay_verbose>0 )
     {
       //    cerr << getpid() << endl;
-#ifdef HAVE_LIBID3
       try {
 	const ID3_Tag*  mytag = new ID3_Tag(filename);
 	if ( mytag->HasV1Tag() || mytag->HasV2Tag()  )
 	  cout << mytag << endl;
 	delete mytag;
-	
       }
-      catch(ID3_Error &err){
-	cout << err.GetErrorFile() << " (" << err.GetErrorLine() << "): "
-	     << err.GetErrorType() << ": " << err.GetErrorDesc() << endl;
+//      catch(ID3_Error &err){
+      catch(...){
+	cout << "Error found (GetError functions disabled)" << endl;
+//	cout << err.GetErrorFile() << " (" << err.GetErrorLine() << "): "
+//	     << err.GetErrorType() << ": " << err.GetErrorDesc() << endl;
       }
-#endif /* HAVE_LIBID3 */        
     }
+
+#endif /* HAVE_LIBID3 */        
   
   Mpegfileplayer *player;
   

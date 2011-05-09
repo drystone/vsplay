@@ -27,10 +27,10 @@
 #endif /* HAVE_LIBID3 */
 
 #include <fcntl.h>
-#include <string.h>
+#include <string>
 #include <unistd.h>
-#include <iostream.h>
-#include <iomanip.h>
+#include <iostream>
+#include <iomanip>
 
 #include "mpegsound.h"
 #include "xsplay.h"
@@ -213,8 +213,9 @@ static void xplaympeg(char *filename,Soundinputstream *loader,Rawplayer *player)
 	}
       }
       catch(ID3_Error &err){
-	cout << err.GetErrorFile() << " (" << err.GetErrorLine() << "): "
-	     << err.GetErrorType() << ": " << err.GetErrorDesc() << endl;
+	cout << "Error found (GetError functions disabled)" << endl;
+//	cout << err.GetErrorFile() << " (" << err.GetErrorLine() << "): "
+//	     << err.GetErrorType() << ": " << err.GetErrorDesc() << endl;
       }
 #endif /* HAVE_LIBID3 */
 

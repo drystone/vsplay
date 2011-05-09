@@ -20,7 +20,7 @@
 int  splay_verbose=0;
 int splay_startframe=0;
 char *splay_progname;
-char *splay_devicename=NULL;
+const char *splay_devicename=NULL;
 
 char *splay_list[MAXLISTSIZE];
 int  splay_listsize=0;
@@ -34,7 +34,7 @@ bool splay_shuffleflag=false,
 int splay_threadnum=50;
 #endif
 
-char *splay_Sounderrors[SOUND_ERROR_UNKNOWN]=
+const char *splay_Sounderrors[SOUND_ERROR_UNKNOWN]=
 { "Failed to open sound device.",
   "Sound device is busy.",
   "Buffersize of sound device is wrong.",
@@ -186,7 +186,9 @@ void shufflelist(void)
 
   for(i=splay_listsize-1;i>0;i--)
   {
-    p=random()%i;
+    p=random()%(i+1);
+
+    if(p==i)continue;
 
     tmp=splay_list[p];
     splay_list[p]=splay_list[i];

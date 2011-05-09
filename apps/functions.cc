@@ -10,6 +10,7 @@
 #endif
 
 #include <stdio.h>
+#include <string>
 
 #include "xsplay.h"
 

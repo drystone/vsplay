@@ -15,7 +15,7 @@ noinst_HEADERS		= multipleselect.h fileselect.h \
 LDADD= ../libs/libmpeg.a
 
 INCLUDES = -I../libs  -I/usr/include/qt
-xsplay_LDADD=-lqt $(LDADD)
+xsplay_LDADD=-lqt -lz $(LDADD)
 
 man_MANS = splay.1 xsplay.1
 EXTRA_DIST = $(man_MANS)

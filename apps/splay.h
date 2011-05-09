@@ -10,7 +10,7 @@
 extern int  splay_verbose;
 extern int splay_startframe;
 extern char *splay_progname;
-extern char *splay_devicename;
+extern const char *splay_devicename;
 
 extern char *splay_list[MAXLISTSIZE];
 extern int  splay_listsize;
@@ -20,7 +20,7 @@ extern bool splay_shuffleflag,
             splay_forcetomonoflag,
             splay_frameinfo;
 
-extern char *splay_Sounderrors[];
+extern const char *splay_Sounderrors[];
 
 #ifdef PTHREADEDMPEG
 extern int  splay_threadnum;

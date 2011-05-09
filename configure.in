@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(apps/splay.cc)
-AM_INIT_AUTOMAKE(splay, 0.9.5.2)
+AM_INIT_AUTOMAKE(splay, 0.9.7.0)
 AC_SUBST(XSPLAY)
 
 dnl Checks for programs.
