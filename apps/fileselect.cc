@@ -12,6 +12,7 @@
 #include "fileselect.h"
 
 #include <qregexp.h>
+#include <qpushbutton.h>
 
 FileSelect::FileSelect( QWidget *parent,char *name )
         : QDialog(parent,name,TRUE)

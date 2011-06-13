@@ -2,9 +2,9 @@
 
    Copyright (C) 1997 by Jung woo-jae */
 
-#include <qlist.h>
-#include <qpainter.h>
-#include <qtablevw.h>
+#include <string.h>
+
+#include <qgridview.h>
 
 class MFile
 {
@@ -21,7 +21,7 @@ private:
   int  selected;
 };
 
-class MSelect : public QTableView
+class MSelect : public QGridView
 {
   Q_OBJECT
 public:

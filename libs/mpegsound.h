@@ -10,7 +10,6 @@
 /* Inlcude default library packages */
 /************************************/
 #include <stdio.h>
-#include <sys/types.h>
 
 #ifdef PTHREADEDMPEG
 #ifdef HAVE_PTHREAD_H
@@ -21,6 +20,10 @@
 #endif
 #endif
 #endif
+
+#ifdef ALSA
+#include <alsa/asoundlib.h>
+#endif // ALSA
 
 #ifndef _L__SOUND__
 #define _L__SOUND__
@@ -60,7 +63,6 @@
 #define SOUND_ERROR_THREADFAIL       18
 
 #define SOUND_ERROR_UNKNOWN          19
-
 
 /**************************/
 /* Define values for MPEG */
@@ -295,7 +297,25 @@ private:
   int  quota;
 };
 
+#ifdef ALSA
+// Class for alsa playing raw data 
+class Rawplayeralsa : public Soundplayer
+{
+public:
+  Rawplayeralsa();
+  ~Rawplayeralsa();
 
+  bool initialize(const char *filename);
+  bool setsoundtype(int stereo,int samplesize,int speed);
+  bool putblock(void *buffer,int size);
+  void abort(void);
+
+private:
+  snd_pcm_t *_device_handle;
+  snd_pcm_hw_params_t *_hw_params;
+  unsigned int _channels;
+};
+#endif // ALSA
 
 /*********************************/
 /* Data format converter classes */
@@ -410,7 +430,7 @@ private:
 public:
   Mpegtoraw(Soundinputstream *loader,Soundplayer *player);
   ~Mpegtoraw();
-  void initialize(char *filename);
+  void initialize();
   bool run(int frames);
   int  geterrorcode(void) {return __errorcode;};
   void clearbuffer(void);
@@ -567,14 +587,17 @@ public:
 class Fileplayer
 {
 public:
-  Fileplayer();
+  Fileplayer(Soundplayer* player);
   virtual ~Fileplayer();
 
   int geterrorcode(void)        {return __errorcode;};
 
-  virtual bool openfile(char *filename,const char *device)=0;
+  virtual bool openfile(char *filename)=0;
   virtual void setforcetomono(bool flag)            =0;
   virtual bool playing(int verbose,bool frameinfo, int startframe)                 =0;
+#ifdef PTHREADEDMPEG
+  virtual bool playingwiththread(int verbose,bool frameinfo,int framenumbers, int startframe) =0;
+#endif
 
 protected:
   bool seterrorcode(int errorno){__errorcode=errorno;return false;};
@@ -589,14 +612,14 @@ private:
 class Mpegfileplayer : public Fileplayer
 {
 public:
-  Mpegfileplayer();
+  Mpegfileplayer(Soundplayer* player);
   ~Mpegfileplayer();
 
-  bool openfile(char *filename,const char *device);
+  bool openfile(char *filename);
   void setforcetomono(bool flag);
   void setdownfrequency(int value);
   bool playing(int verbose, bool frameinfo, int startframe);
-#if PTHREADEDMPEG
+#ifdef PTHREADEDMPEG
   bool playingwiththread(int verbose,bool frameinfo,int framenumbers, int startframe);
 #endif
 

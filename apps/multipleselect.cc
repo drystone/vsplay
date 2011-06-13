@@ -8,6 +8,8 @@
 
 #include <stdlib.h>
 
+#include <qpainter.h>
+
 #include "multipleselect.h"
 
 MFile::~MFile()
@@ -15,7 +17,7 @@ MFile::~MFile()
   free((void *)str);
 }
 
-MSelect::MSelect(QWidget *parent,const char *name) : QTableView(parent,name)
+MSelect::MSelect(QWidget *parent,const char *name) : QGridView(parent,name)
 {
   currentselectnum=1;
   setFrameStyle(QFrame::WinPanel | QFrame::Sunken);
@@ -25,9 +27,10 @@ MSelect::MSelect(QWidget *parent,const char *name) : QTableView(parent,name)
   setNumRows(1);
   setCellWidth(230);
   setCellHeight(20);
-  setTableFlags(Tbl_vScrollBar |
-		Tbl_clipCellPainting |
-		Tbl_smoothScrolling);
+//  setTableFlags();
+//  setTableFlags(Tbl_vScrollBar |
+//		Tbl_clipCellPainting |
+//		Tbl_smoothScrolling);
   resize(400,200);
 
   filelist=new QList<MFile>;
@@ -86,8 +89,8 @@ void MSelect::Select(int fileindex,bool select)
 
 void MSelect::paintCell(QPainter* p,int fileindex,int)
 {
-  int w=cellWidth(0);
-  int h=cellHeight(fileindex);
+  int w=cellWidth();
+  int h=cellHeight();
   int x2=w-1;
   int y2=h-1;
 
@@ -124,7 +127,7 @@ void MSelect::mousePressEvent(QMouseEvent* e)
   int oldfileindex=currentfileindex;
   QPoint clickedPos=e->pos();
 
-  currentfileindex=findRow(clickedPos.y());
+  currentfileindex=rowAt(clickedPos.y());
 
   if(currentfileindex>=0 && currentfileindex<listnumber)
   {
@@ -142,7 +145,7 @@ void MSelect::mouseDoubleClickEvent(QMouseEvent *e)
   int oldfileindex=currentfileindex;
   QPoint clickedPos=e->pos();
 
-  currentfileindex=findRow(clickedPos.y());
+  currentfileindex=rowAt(clickedPos.y());
 
   if(currentfileindex>=0 && currentfileindex<listnumber)
   {

@@ -5,8 +5,8 @@
 
 #include <qlabel.h>
 #include <qmenubar.h>
-#include <qpushbt.h>
 #include <qslider.h>
+#include <qpushbutton.h>
 
 class Label
 {

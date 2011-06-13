@@ -1,23 +1,23 @@
 /****************************************************************************
 ** OptionPanel meta object code from reading C++ file 'optionpanel.h'
 **
-** Created: Tue Feb 20 18:35:27 2001
-**      by: The Qt MOC ($Id: moc_optionp.cc,v 1.2 2001/02/20 19:04:07 micce Exp $)
+** Created: Wed Dec 1 12:03:12 2004
+**      by: The Qt MOC ($Id: moc_optionp.cc,v 1.2 2004/12/10 15:06:06 jayache Exp $)
 **
 ** WARNING! All changes made in this file will be lost!
 *****************************************************************************/
 
-#if !defined(Q_MOC_OUTPUT_REVISION)
-#define Q_MOC_OUTPUT_REVISION 9
-#elif Q_MOC_OUTPUT_REVISION != 9
-#error "Moc format conflict - please regenerate all moc files"
-#endif
-
+#undef QT_NO_COMPAT
 #include "optionpanel.h"
 #include <qmetaobject.h>
 #include <qapplication.h>
 
-
+#include <private/qucomextra_p.h>
+#if !defined(Q_MOC_OUTPUT_REVISION) || (Q_MOC_OUTPUT_REVISION != 26)
+#error "This file was generated using the moc from 3.3.3. It"
+#error "cannot be used with the include files from this version of Qt."
+#error "(The moc has changed too much.)"
+#endif
 
 const char *OptionPanel::className() const
 {
@@ -25,27 +25,25 @@ const char *OptionPanel::className() const
 }
 
 QMetaObject *OptionPanel::metaObj = 0;
-
-void OptionPanel::initMetaObject()
-{
-    if ( metaObj )
-	return;
-    if ( qstrcmp(QDialog::className(), "QDialog") != 0 )
-	badSuperclassWarning("OptionPanel","QDialog");
-    (void) staticMetaObject();
-}
+static QMetaObjectCleanUp cleanUp_OptionPanel( "OptionPanel", &OptionPanel::staticMetaObject );
 
 #ifndef QT_NO_TRANSLATION
-
-QString OptionPanel::tr(const char* s)
+QString OptionPanel::tr( const char *s, const char *c )
 {
-    return qApp->translate( "OptionPanel", s, 0 );
+    if ( qApp )
+	return qApp->translate( "OptionPanel", s, c, QApplication::DefaultCodec );
+    else
+	return QString::fromLatin1( s );
 }
-
-QString OptionPanel::tr(const char* s, const char * c)
+#ifndef QT_NO_TRANSLATION_UTF8
+QString OptionPanel::trUtf8( const char *s, const char *c )
 {
-    return qApp->translate( "OptionPanel", s, c );
+    if ( qApp )
+	return qApp->translate( "OptionPanel", s, c, QApplication::UnicodeUTF8 );
+    else
+	return QString::fromUtf8( s );
 }
+#endif // QT_NO_TRANSLATION_UTF8
 
 #endif // QT_NO_TRANSLATION
 
@@ -53,34 +51,20 @@ QMetaObject* OptionPanel::staticMetaObject()
 {
     if ( metaObj )
 	return metaObj;
-    (void) QDialog::staticMetaObject();
-#ifndef QT_NO_PROPERTIES
-#endif // QT_NO_PROPERTIES
-    typedef void (OptionPanel::*m1_t0)();
-    typedef void (QObject::*om1_t0)();
-    typedef void (OptionPanel::*m1_t1)();
-    typedef void (QObject::*om1_t1)();
-    typedef void (OptionPanel::*m1_t2)(int);
-    typedef void (QObject::*om1_t2)(int);
-    m1_t0 v1_0 = &OptionPanel::SelectOk;
-    om1_t0 ov1_0 = (om1_t0)v1_0;
-    m1_t1 v1_1 = &OptionPanel::SelectCancel;
-    om1_t1 ov1_1 = (om1_t1)v1_1;
-    m1_t2 v1_2 = &OptionPanel::setthread;
-    om1_t2 ov1_2 = (om1_t2)v1_2;
-    QMetaData *slot_tbl = QMetaObject::new_metadata(3);
-    QMetaData::Access *slot_tbl_access = QMetaObject::new_metaaccess(3);
-    slot_tbl[0].name = "SelectOk()";
-    slot_tbl[0].ptr = (QMember)ov1_0;
-    slot_tbl_access[0] = QMetaData::Public;
-    slot_tbl[1].name = "SelectCancel()";
-    slot_tbl[1].ptr = (QMember)ov1_1;
-    slot_tbl_access[1] = QMetaData::Public;
-    slot_tbl[2].name = "setthread(int)";
-    slot_tbl[2].ptr = (QMember)ov1_2;
-    slot_tbl_access[2] = QMetaData::Public;
+    QMetaObject* parentObject = QDialog::staticMetaObject();
+    static const QUMethod slot_0 = {"SelectOk", 0, 0 };
+    static const QUMethod slot_1 = {"SelectCancel", 0, 0 };
+    static const QUParameter param_slot_2[] = {
+	{ 0, &static_QUType_int, 0, QUParameter::In }
+    };
+    static const QUMethod slot_2 = {"setthread", 1, param_slot_2 };
+    static const QMetaData slot_tbl[] = {
+	{ "SelectOk()", &slot_0, QMetaData::Public },
+	{ "SelectCancel()", &slot_1, QMetaData::Public },
+	{ "setthread(int)", &slot_2, QMetaData::Public }
+    };
     metaObj = QMetaObject::new_metaobject(
-	"OptionPanel", "QDialog",
+	"OptionPanel", parentObject,
 	slot_tbl, 3,
 	0, 0,
 #ifndef QT_NO_PROPERTIES
@@ -88,8 +72,39 @@ QMetaObject* OptionPanel::staticMetaObject()
 	0, 0,
 #endif // QT_NO_PROPERTIES
 	0, 0 );
-    metaObj->set_slot_access( slot_tbl_access );
-#ifndef QT_NO_PROPERTIES
-#endif // QT_NO_PROPERTIES
+    cleanUp_OptionPanel.setMetaObject( metaObj );
     return metaObj;
 }
+
+void* OptionPanel::qt_cast( const char* clname )
+{
+    if ( !qstrcmp( clname, "OptionPanel" ) )
+	return this;
+    return QDialog::qt_cast( clname );
+}
+
+bool OptionPanel::qt_invoke( int _id, QUObject* _o )
+{
+    switch ( _id - staticMetaObject()->slotOffset() ) {
+    case 0: SelectOk(); break;
+    case 1: SelectCancel(); break;
+    case 2: setthread((int)static_QUType_int.get(_o+1)); break;
+    default:
+	return QDialog::qt_invoke( _id, _o );
+    }
+    return TRUE;
+}
+
+bool OptionPanel::qt_emit( int _id, QUObject* _o )
+{
+    return QDialog::qt_emit(_id,_o);
+}
+#ifndef QT_NO_PROPERTIES
+
+bool OptionPanel::qt_property( int id, int f, QVariant* v)
+{
+    return QDialog::qt_property( id, f, v);
+}
+
+bool OptionPanel::qt_static_property( QObject* , int , int , QVariant* ){ return FALSE; }
+#endif // QT_NO_PROPERTIES

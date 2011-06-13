@@ -9,21 +9,20 @@
 #include "config.h"
 #endif
 
+#if HAVE_IOSTREAM
 #include <iostream>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
+using namespace std;
+#else
+#include <iostream.h>
+#endif
 
 #include "mpegsound.h"
 
-using namespace std;
-
 // File player superclass
-Fileplayer::Fileplayer()
+Fileplayer::Fileplayer(Soundplayer * player)
+    : player(player)
 {
   __errorcode=SOUND_ERROR_OK;
-  player=NULL;
 };
 
 Fileplayer::~Fileplayer()
@@ -32,7 +31,8 @@ Fileplayer::~Fileplayer()
 };
 
 // Mpegfileplayer
-Mpegfileplayer::Mpegfileplayer()
+Mpegfileplayer::Mpegfileplayer(Soundplayer * player)
+    : Fileplayer(player)
 {
   loader=NULL;
   server=NULL;
@@ -44,36 +44,8 @@ Mpegfileplayer::~Mpegfileplayer()
   if(server)delete server;
 }
 
-bool Mpegfileplayer::openfile(char *filename,const char *device)
+bool Mpegfileplayer::openfile(char *filename)
 {
-// Player
-  if(device==NULL){
-    int fd;
-    device="/dev/sound/dsp";
-    fd=open(device, O_WRONLY|O_NDELAY);
-    if( fd == -1 ) {
-      device="/dev/dsp";
-      fd=open(device, O_WRONLY|O_NDELAY);
-    }
-    if ( fd == -1 ) {
-      cerr << "Cannot open /dev/dsp or /dev/sound/dsp!" << endl;
-      return seterrorcode(SOUND_ERROR_DEVOPENFAIL);
-    }
-    close(fd);
-  }
-  
-  if(device[0]=='/')player=new Rawplayer;
-  else 
-  {
-    if(device[0]=='-')device=NULL;
-    player=new Rawtofile;
-  }
-
-  if(player==NULL)
-    return seterrorcode(SOUND_ERROR_MEMORYNOTENOUGH);
-  if(!player->initialize(device))
-    return seterrorcode(player->geterrorcode());
-
 // Loader
   {
     int err;
@@ -86,7 +58,7 @@ bool Mpegfileplayer::openfile(char *filename,const char *device)
     return seterrorcode(SOUND_ERROR_MEMORYNOTENOUGH);
 
 // Initialize server
-  server->initialize(filename);
+  server->initialize();
   return true;
 }
 
@@ -112,7 +84,11 @@ char * tominsec(double s)
 
 bool Mpegfileplayer::playing(int verbose, bool frameinfo, int startframe)
 {
-  if(!server->run(-1))return false;       // Initialize MPEG Layer 3
+  if(!server->run(-1))
+  {       // Initialize MPEG Layer 3
+      seterrorcode(server->geterrorcode());
+      return false;
+  }
   if(verbose>0)showverbose(verbose);
 
   if (startframe) server->setframe(startframe);
@@ -150,7 +126,11 @@ bool Mpegfileplayer::playingwiththread(int verbose,bool frameinfo,
 
   server->makethreadedplayer(framenumbers);
 
-  if(!server->run(-1))return false;       // Initialize MPEG Layer 3
+  if(!server->run(-1))
+  {       // Initialize MPEG Layer 3
+      seterrorcode(server->geterrorcode());
+      return false;
+  }
   if(verbose>0)showverbose(verbose);
 
   if (startframe) server->setframe(startframe);

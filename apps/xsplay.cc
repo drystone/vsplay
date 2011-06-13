@@ -29,6 +29,7 @@
 #include <fcntl.h>
 #include <string>
 #include <unistd.h>
+
 #include <iostream>
 #include <iomanip>
 
@@ -198,25 +199,20 @@ static void xplaympeg(char *filename,Soundinputstream *loader,Rawplayer *player)
     seterrorcode(SOUND_ERROR_MEMORYNOTENOUGH);
     return;
   }
-  server->initialize(filename);
+  server->initialize();
   server->setforcetomono(splay_forcetomonoflag);
   server->setdownfrequency(splay_downfrequency);
   if(threadflag)server->makethreadedplayer(splay_threadnum);
 
 #ifdef HAVE_LIBID3
-      try {
-	const ID3_Tag*  mytag = new ID3_Tag(filename);
-	if ( mytag->HasV1Tag() || mytag->HasV2Tag()  ) {
-	  Setsongname(nn(ID3_GetTitle(mytag)));
-	  Setsongmusican(nn(ID3_GetArtist(mytag)));
-	  delete mytag;
+  {
+	ID3_Tag mytag(filename);
+	if ( mytag.HasV1Tag() || mytag.HasV2Tag() )
+    {
+	  Setsongname(nn(ID3_GetTitle(&mytag)));
+	  Setsongmusican(nn(ID3_GetArtist(&mytag)));
 	}
-      }
-      catch(ID3_Error &err){
-	cout << "Error found (GetError functions disabled)" << endl;
-//	cout << err.GetErrorFile() << " (" << err.GetErrorLine() << "): "
-//	     << err.GetErrorType() << ": " << err.GetErrorDesc() << endl;
-      }
+  }
 #endif /* HAVE_LIBID3 */
 
   music.quit=music.pause=
@@ -373,7 +369,7 @@ static char *stripfilename(char *str)
 
 static void xplayfile(char *filename)
 {
-  char *device=Rawplayer::defaultdevice;
+  char *device=splay_devicename;
   Soundinputstream *loader;
   Rawplayer        *player;
 

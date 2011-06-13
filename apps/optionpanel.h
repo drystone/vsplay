@@ -2,10 +2,10 @@
 
    Copyright (C) 1997 by Jung woo-jae */
 
-#include <qchkbox.h>
+#include <qcheckbox.h>
 #include <qdialog.h>
 #include <qlabel.h>
-#include <qpushbt.h>
+#include <qpushbutton.h>
 #include <qslider.h>
 
 class OptionPanel : public QDialog

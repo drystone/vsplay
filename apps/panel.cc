@@ -12,13 +12,13 @@
 #include "xsplay.h"
 #include "panel.h"
 
-#include <qapp.h>
+#include <qapplication.h>
 #include <qbrush.h>
-#include <qfiledlg.h>
 #include <qkeycode.h>
-#include <qmsgbox.h>
+#include <qmessagebox.h>
 #include <qpainter.h>
 #include <qpixmap.h>
+#include <qfiledialog.h>
 
 Panel *panel;
 QApplication *mainwidget;
@@ -334,7 +334,7 @@ void Panel::load()
 void Panel::loadlist()
 {
   QString fn = QFileDialog::getOpenFileName();
-  if(!fn.isEmpty())
+  if(!(fn.isEmpty() || fn == "-")) // '-' would cause readlist to read stdin
   {
     stop();
     readlist((char *)((const char *)fn));

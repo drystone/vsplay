@@ -7,9 +7,8 @@
 #include <qdialog.h>
 #include <qdir.h>
 #include <qlabel.h>
-#include <qlined.h>
 #include <qlistbox.h>
-#include <qpushbt.h>
+#include <qlineedit.h>
 
 
 class FileSelect : public QDialog
