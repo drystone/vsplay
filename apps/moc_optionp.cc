@@ -1,8 +1,8 @@
 /****************************************************************************
 ** OptionPanel meta object code from reading C++ file 'optionpanel.h'
 **
-** Created: Wed Dec 1 12:03:12 2004
-**      by: The Qt MOC ($Id: moc_optionp.cc,v 1.2 2004/12/10 15:06:06 jayache Exp $)
+** Created: Tue Jun 14 08:01:14 2011
+**      by: The Qt MOC ($Id: qt/moc_yacc.cpp   3.3.8   edited Feb 2 14:59 $)
 **
 ** WARNING! All changes made in this file will be lost!
 *****************************************************************************/
@@ -14,7 +14,7 @@
 
 #include <private/qucomextra_p.h>
 #if !defined(Q_MOC_OUTPUT_REVISION) || (Q_MOC_OUTPUT_REVISION != 26)
-#error "This file was generated using the moc from 3.3.3. It"
+#error "This file was generated using the moc from 3.3.8b. It"
 #error "cannot be used with the include files from this version of Qt."
 #error "(The moc has changed too much.)"
 #endif

@@ -7,10 +7,10 @@
 #define MAXFRAMESLIDER 2000
 
 // Strings used frequently
-extern char *stopstring,*nonestring,*nullstring;
+extern const char *stopstring,*nonestring,*nullstring;
 
 // Panel.cc
-void Displayerror(char *errstr);
+void Displayerror(const char *errstr);
 bool Msgboxdone(void);
 
 void Setsongname   (const char *name);

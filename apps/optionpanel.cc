@@ -11,7 +11,7 @@
 #include "xsplay.h"
 #include "optionpanel.h"
 
-OptionPanel::OptionPanel(QWidget *parent,char *name)
+OptionPanel::OptionPanel(QWidget *parent,const char *name)
   : QDialog(parent,name,TRUE)
 {
   setCaption("Options");

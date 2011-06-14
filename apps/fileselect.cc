@@ -14,7 +14,7 @@
 #include <qregexp.h>
 #include <qpushbutton.h>
 
-FileSelect::FileSelect( QWidget *parent,char *name )
+FileSelect::FileSelect( QWidget *parent,const char *name )
         : QDialog(parent,name,TRUE)
 {
   setCaption("Open Files");
@@ -189,8 +189,8 @@ void FileSelect::readdir()
     for(p=0;str[p];p++)
       if(str[p]==':')regexpnum++;
 
-    regexp=new (QRegExp *)[regexpnum];
-    expression=new (char *)[regexpnum];
+    regexp=new QRegExp *[regexpnum];
+    expression=new char *[regexpnum];
 
     for(p=j=k=0;;p++)
     {

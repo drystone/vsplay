@@ -7,6 +7,7 @@
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include "xsplay.h"
@@ -23,7 +24,7 @@
 Panel *panel;
 QApplication *mainwidget;
 static bool errorflag=false;
-static char *errorstring;
+static const char *errorstring;
 
 #define BOXWIDTH        2
 #define FONTSIZE        16
@@ -404,7 +405,7 @@ void Panel::Framechanged(int frame)
 /*********************/
 /* Interface routine */
 /*********************/
-void Displayerror(char *errstr)
+void Displayerror(const char *errstr)
 {
   errorstring=errstr;
   errorflag=true;
