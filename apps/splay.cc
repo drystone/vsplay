@@ -205,7 +205,7 @@ Soundplayer * open_device(const char * devicename, Devicetype devicetype) throw 
 #ifdef ALSA
   case devicetype_alsa:
     if (!devicename)
-      devicename = "hw:0";
+      devicename = "default";
     device = new Rawplayeralsa;
     break;
 #endif // ALSA
@@ -272,8 +272,6 @@ int main(int argc,char *argv[])
 	}
 	break;
 #endif
-      devicetype = devicetype_alsa;
-      break;
     case 'S':single_threaded = true; break;
     default:fprintf(stderr,"Bad argument.\n");
     }
