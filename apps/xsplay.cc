@@ -212,11 +212,11 @@ static void xplaympeg(char *filename,Soundinputstream *loader,Rawplayer *player)
   if(threadflag)server->makethreadedplayer(splay_threadnum);
 
 #ifdef TAGLIB
-  {
-    TagLib::Tag * tag = TagLib::MPEG::File(filename).tag();
-	Setsongname(tag->title());
-	Setsongmusican(tag->artist());
-  }
+  TagLib::MPEG::File tagf(filename);
+  TagLib::String title = tagf.tag()->title();
+  TagLib::String artist = tagf.tag()->artist();
+  Setsongname(title.toCString());
+  Setsongmusican(artist.toCString());
 #endif /* TAGLIB */        
 
 #ifdef HAVE_LIBID3
