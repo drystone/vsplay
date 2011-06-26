@@ -26,6 +26,10 @@ using namespace std;
 #include <id3/misc_support.h>
 #endif /* HAVE_LIBID3 */
 
+#ifdef TAGLIB
+#include <taglib/tag.h>
+#include <taglib/mpegfile.h>
+#endif
 
 #include "mpegsound.h"
 
@@ -83,31 +87,30 @@ static void playing(Fileplayer *player)
   }
 }
 
+#ifdef TAGLIB
+ostream& operator<<(ostream& s, const TagLib::Tag& tag )
+{
+  s.setf(ios::left);
+  s << "Title : " << tag.title() << endl
+    << "Artist: " << setw(30) << tag.artist()
+    << "Album: " << tag.album() << endl
+    << "Genre : " << setw(18) << tag.genre()
+    << "Track: " << setw(5) << tag.track()
+    << "Year: " <<  setw(6) << tag.year()
+    << endl << flush; 
+  return s;
+}
+#endif /* TAGLIB */
+
+#ifdef HAVE_LIBID3
 //Wrapper to convert null-string to the empty string
 inline const char * nn(const char* str)
 {
   return str?str:"";
 }
 
-#ifdef HAVE_LIBID3
-
 ostream& operator<<(ostream& s, const ID3_Tag* tag )
 {
-  /* this gets all frames, but the info is rather difficult to get,
-     just assume all is ID3FN_TEXT here and hope we get the most...
-  */
-  /*
-  size_t max = tag->NumFrames();
-  // s << "frames: " << max << endl;
-  for ( size_t n=0; n<max ; n++){
-    if ( ID3_Frame* frame = (*tag)[n] ){
-      s << "@@@" << frame->GetDescription() << " " <<
-	ID3_GetString(frame,ID3FN_TEXT) << endl;
-    }
-  }
-  */
-
-
   // Print just what we want...
   s.setf(ios::left);  // The filled fields get the text to the left
   s << 
@@ -134,15 +137,18 @@ static void play(char *filename, Soundplayer* device)
 {
   if( splay_verbose-- )
     cout << filename << ":" << endl;
-#ifdef HAVE_LIBID3
+
   if( splay_verbose>0 && strcmp(filename, "-") != 0) // cant do ID3 stuff on stdin
     {
-      //    cerr << getpid() << endl;
+#ifdef TAGLIB
+      cout << *TagLib::MPEG::File(filename).tag();
+#endif /* TAGLIB */        
+#ifdef HAVE_LIBID3
 	  ID3_Tag mytag(filename);
 	  if ( mytag.HasV1Tag() || mytag.HasV2Tag()  )
 	    cout << &mytag << endl;
-    }
 #endif /* HAVE_LIBID3 */        
+    }
   
   Mpegfileplayer player(device);
   if(!player.openfile(strcmp(filename,"-")==0?NULL:filename))

@@ -26,6 +26,11 @@
 #include <id3/misc_support.h>
 #endif /* HAVE_LIBID3 */
 
+#ifdef TAGLIB
+#include <taglib/tag.h>
+#include <taglib/mpegfile.h>
+#endif
+
 #include <fcntl.h>
 #include <string>
 #include <unistd.h>
@@ -168,11 +173,13 @@ static int adjustframe(int slider,int maxframe)
 
 
 
+#ifdef HAVE_LIBID3
 //Wrapper to convert null-string to the empty string
 inline const char * nn(const char* str)
 {
   return str?str:"";
 }
+#endif /* HAVE_LIBID3 */
 
 /*************************************/
 /* Funcitions playing MPEG file */
@@ -203,6 +210,14 @@ static void xplaympeg(char *filename,Soundinputstream *loader,Rawplayer *player)
   server->setforcetomono(splay_forcetomonoflag);
   server->setdownfrequency(splay_downfrequency);
   if(threadflag)server->makethreadedplayer(splay_threadnum);
+
+#ifdef TAGLIB
+  {
+    TagLib::Tag * tag = TagLib::MPEG::File(filename).tag();
+	Setsongname(tag->title());
+	Setsongmusican(tag->artist());
+  }
+#endif /* TAGLIB */        
 
 #ifdef HAVE_LIBID3
   {

@@ -92,7 +92,7 @@ Rawplayeralsa::putblock(void *buffer, int size)
         }
         else if (result == -EPIPE)
         {   // underrun
-            std::cerr << "underrun" << std::endl;
+            snd_pcm_recover(_device_handle, result, 1);
             continue;
         }
         else if (result < 0)

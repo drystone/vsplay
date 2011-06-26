@@ -14,7 +14,14 @@ AC_PROG_LN_S
 AC_PROG_RANLIB
 
 dnl Checks for libraries.
-AC_CHECK_LIB(id3, ID3Tag_New)
+AC_CHECK_LIB([tag], [main], [AC_CHECK_HEADERS([taglib/tag_c.h],
+    [AC_DEFINE([TAGLIB], [1], [Define to 1 for taglib])]
+    [LIBTAG=1]
+	[LIBS="$LIBS -ltag"]
+)])
+if test "$LIBTAG" != "1"; then
+    AC_CHECK_LIB(id3, ID3Tag_New)
+fi
 AC_CHECK_LIB(m, cos)
 AC_CHECK_LIB(pthread,main,INCLUDEPTHREAD=1)
 AC_CHECK_LIB([qt-mt], [main], [XSPLAY=xsplay])
