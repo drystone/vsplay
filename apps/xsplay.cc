@@ -26,9 +26,15 @@
 #include <id3/misc_support.h>
 #endif /* HAVE_LIBID3 */
 
+#ifdef TAGLIB
+#include <taglib/tag.h>
+#include <taglib/mpegfile.h>
+#endif
+
 #include <fcntl.h>
 #include <string>
 #include <unistd.h>
+
 #include <iostream>
 #include <iomanip>
 
@@ -52,9 +58,9 @@ static struct
   int  errorcode;
 }musics;
 
-char *nullstring="";
-char *stopstring="Stop";
-char *nonestring="None";
+const char *nullstring="";
+const char *stopstring="Stop";
+const char *nonestring="None";
 
 static pthread_mutex_t startuplock;
 
@@ -167,11 +173,13 @@ static int adjustframe(int slider,int maxframe)
 
 
 
+#ifdef HAVE_LIBID3
 //Wrapper to convert null-string to the empty string
 inline const char * nn(const char* str)
 {
   return str?str:"";
 }
+#endif /* HAVE_LIBID3 */
 
 /*************************************/
 /* Funcitions playing MPEG file */
@@ -198,25 +206,28 @@ static void xplaympeg(char *filename,Soundinputstream *loader,Rawplayer *player)
     seterrorcode(SOUND_ERROR_MEMORYNOTENOUGH);
     return;
   }
-  server->initialize(filename);
+  server->initialize();
   server->setforcetomono(splay_forcetomonoflag);
   server->setdownfrequency(splay_downfrequency);
   if(threadflag)server->makethreadedplayer(splay_threadnum);
 
+#ifdef TAGLIB
+  TagLib::MPEG::File tagf(filename);
+  TagLib::String title = tagf.tag()->title();
+  TagLib::String artist = tagf.tag()->artist();
+  Setsongname(title.toCString());
+  Setsongmusican(artist.toCString());
+#endif /* TAGLIB */        
+
 #ifdef HAVE_LIBID3
-      try {
-	const ID3_Tag*  mytag = new ID3_Tag(filename);
-	if ( mytag->HasV1Tag() || mytag->HasV2Tag()  ) {
-	  Setsongname(nn(ID3_GetTitle(mytag)));
-	  Setsongmusican(nn(ID3_GetArtist(mytag)));
-	  delete mytag;
+  {
+	ID3_Tag mytag(filename);
+	if ( mytag.HasV1Tag() || mytag.HasV2Tag() )
+    {
+	  Setsongname(nn(ID3_GetTitle(&mytag)));
+	  Setsongmusican(nn(ID3_GetArtist(&mytag)));
 	}
-      }
-      catch(ID3_Error &err){
-	cout << "Error found (GetError functions disabled)" << endl;
-//	cout << err.GetErrorFile() << " (" << err.GetErrorLine() << "): "
-//	     << err.GetErrorType() << ": " << err.GetErrorDesc() << endl;
-      }
+  }
 #endif /* HAVE_LIBID3 */
 
   music.quit=music.pause=
@@ -348,11 +359,11 @@ static void xplaympeg(char *filename,Soundinputstream *loader,Rawplayer *player)
   return;
 }
 
-static char *stripfilename(char *str)
+static char *stripfilename(const char *str)
 {
   static char songname[30+1];
 
-  char *ss;
+  const char *ss;
   int p=0,s=0;
 
   for(;str[p];p++)
@@ -373,7 +384,7 @@ static char *stripfilename(char *str)
 
 static void xplayfile(char *filename)
 {
-  char *device=Rawplayer::defaultdevice;
+  const char *device = splay_devicename;
   Soundinputstream *loader;
   Rawplayer        *player;
 
@@ -389,8 +400,8 @@ static void xplayfile(char *filename)
   }
 
 // Player
-  if(device==NULL)device=Rawplayer::defaultdevice;
-  if(device[0]!='/')device=Rawplayer::defaultdevice;
+  if (device == NULL) device = Rawplayer::defaultdevice;
+  if (device[0] != '/') device = Rawplayer::defaultdevice;
   player=new Rawplayer;
 
   if(player==NULL)
@@ -479,10 +490,10 @@ static void xplay()
 
     if(updateflag)
     {
-      char *str;
+      const char *str;
 
       if(musics.currentrun<splay_listsize)str=splay_list[musics.currentrun];
-      else if(splay_listsize==0)str=nonestring;
+      else if (splay_listsize == 0) str = nonestring;
       else if(splay_exitwhendone)exit(0);
       else str="End of list";
       Setsongpath(str);

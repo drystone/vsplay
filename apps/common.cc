@@ -124,6 +124,11 @@ void readlist(char *filename)
   {
     int err;
 
+    if (strcmp(filename,"-")==0)
+    {
+      filename = NULL;	// forces Soundinputstream to use stdin
+    }
+
     if((fp=Soundinputstream::hopen(filename,&err))==NULL)
     {
       fprintf(stderr,"%s: No list file found\n",splay_progname);

@@ -5,8 +5,8 @@
 
 #include <qlabel.h>
 #include <qmenubar.h>
-#include <qpushbt.h>
 #include <qslider.h>
+#include <qpushbutton.h>
 
 class Label
 {
@@ -24,7 +24,7 @@ class Panel : public QWidget
 public:
   Panel(QWidget *parent=0,const char *name=0);
 
-  friend void Displayerror(char *errstr);
+  friend void Displayerror(const char *errstr);
   friend void Setsongname   (const char *name);
   friend void Setsongmusican(const char *musican);
   friend void Setsongpath   (const char *path);

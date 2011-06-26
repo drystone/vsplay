@@ -1,23 +1,23 @@
 /****************************************************************************
 ** FileSelect meta object code from reading C++ file 'fileselect.h'
 **
-** Created: Tue Feb 20 18:35:14 2001
-**      by: The Qt MOC ($Id: moc_file.cc,v 1.2 2001/02/20 19:04:07 micce Exp $)
+** Created: Tue Jun 14 07:59:56 2011
+**      by: The Qt MOC ($Id: qt/moc_yacc.cpp   3.3.8   edited Feb 2 14:59 $)
 **
 ** WARNING! All changes made in this file will be lost!
 *****************************************************************************/
 
-#if !defined(Q_MOC_OUTPUT_REVISION)
-#define Q_MOC_OUTPUT_REVISION 9
-#elif Q_MOC_OUTPUT_REVISION != 9
-#error "Moc format conflict - please regenerate all moc files"
-#endif
-
+#undef QT_NO_COMPAT
 #include "fileselect.h"
 #include <qmetaobject.h>
 #include <qapplication.h>
 
-
+#include <private/qucomextra_p.h>
+#if !defined(Q_MOC_OUTPUT_REVISION) || (Q_MOC_OUTPUT_REVISION != 26)
+#error "This file was generated using the moc from 3.3.8b. It"
+#error "cannot be used with the include files from this version of Qt."
+#error "(The moc has changed too much.)"
+#endif
 
 const char *FileSelect::className() const
 {
@@ -25,27 +25,25 @@ const char *FileSelect::className() const
 }
 
 QMetaObject *FileSelect::metaObj = 0;
-
-void FileSelect::initMetaObject()
-{
-    if ( metaObj )
-	return;
-    if ( qstrcmp(QDialog::className(), "QDialog") != 0 )
-	badSuperclassWarning("FileSelect","QDialog");
-    (void) staticMetaObject();
-}
+static QMetaObjectCleanUp cleanUp_FileSelect( "FileSelect", &FileSelect::staticMetaObject );
 
 #ifndef QT_NO_TRANSLATION
-
-QString FileSelect::tr(const char* s)
+QString FileSelect::tr( const char *s, const char *c )
 {
-    return qApp->translate( "FileSelect", s, 0 );
+    if ( qApp )
+	return qApp->translate( "FileSelect", s, c, QApplication::DefaultCodec );
+    else
+	return QString::fromLatin1( s );
 }
-
-QString FileSelect::tr(const char* s, const char * c)
+#ifndef QT_NO_TRANSLATION_UTF8
+QString FileSelect::trUtf8( const char *s, const char *c )
 {
-    return qApp->translate( "FileSelect", s, c );
+    if ( qApp )
+	return qApp->translate( "FileSelect", s, c, QApplication::UnicodeUTF8 );
+    else
+	return QString::fromUtf8( s );
 }
+#endif // QT_NO_TRANSLATION_UTF8
 
 #endif // QT_NO_TRANSLATION
 
@@ -53,48 +51,24 @@ QMetaObject* FileSelect::staticMetaObject()
 {
     if ( metaObj )
 	return metaObj;
-    (void) QDialog::staticMetaObject();
-#ifndef QT_NO_PROPERTIES
-#endif // QT_NO_PROPERTIES
-    typedef void (FileSelect::*m1_t0)();
-    typedef void (QObject::*om1_t0)();
-    typedef void (FileSelect::*m1_t1)();
-    typedef void (QObject::*om1_t1)();
-    typedef void (FileSelect::*m1_t2)(int);
-    typedef void (QObject::*om1_t2)(int);
-    typedef void (FileSelect::*m1_t3)();
-    typedef void (QObject::*om1_t3)();
-    typedef void (FileSelect::*m1_t4)();
-    typedef void (QObject::*om1_t4)();
-    m1_t0 v1_0 = &FileSelect::SelectOk;
-    om1_t0 ov1_0 = (om1_t0)v1_0;
-    m1_t1 v1_1 = &FileSelect::SelectAll;
-    om1_t1 ov1_1 = (om1_t1)v1_1;
-    m1_t2 v1_2 = &FileSelect::dirSelected;
-    om1_t2 ov1_2 = (om1_t2)v1_2;
-    m1_t3 v1_3 = &FileSelect::MSelectclicked;
-    om1_t3 ov1_3 = (om1_t3)v1_3;
-    m1_t4 v1_4 = &FileSelect::filterentered;
-    om1_t4 ov1_4 = (om1_t4)v1_4;
-    QMetaData *slot_tbl = QMetaObject::new_metadata(5);
-    QMetaData::Access *slot_tbl_access = QMetaObject::new_metaaccess(5);
-    slot_tbl[0].name = "SelectOk()";
-    slot_tbl[0].ptr = (QMember)ov1_0;
-    slot_tbl_access[0] = QMetaData::Public;
-    slot_tbl[1].name = "SelectAll()";
-    slot_tbl[1].ptr = (QMember)ov1_1;
-    slot_tbl_access[1] = QMetaData::Public;
-    slot_tbl[2].name = "dirSelected(int)";
-    slot_tbl[2].ptr = (QMember)ov1_2;
-    slot_tbl_access[2] = QMetaData::Public;
-    slot_tbl[3].name = "MSelectclicked()";
-    slot_tbl[3].ptr = (QMember)ov1_3;
-    slot_tbl_access[3] = QMetaData::Public;
-    slot_tbl[4].name = "filterentered()";
-    slot_tbl[4].ptr = (QMember)ov1_4;
-    slot_tbl_access[4] = QMetaData::Public;
+    QMetaObject* parentObject = QDialog::staticMetaObject();
+    static const QUMethod slot_0 = {"SelectOk", 0, 0 };
+    static const QUMethod slot_1 = {"SelectAll", 0, 0 };
+    static const QUParameter param_slot_2[] = {
+	{ "index", &static_QUType_int, 0, QUParameter::In }
+    };
+    static const QUMethod slot_2 = {"dirSelected", 1, param_slot_2 };
+    static const QUMethod slot_3 = {"MSelectclicked", 0, 0 };
+    static const QUMethod slot_4 = {"filterentered", 0, 0 };
+    static const QMetaData slot_tbl[] = {
+	{ "SelectOk()", &slot_0, QMetaData::Public },
+	{ "SelectAll()", &slot_1, QMetaData::Public },
+	{ "dirSelected(int)", &slot_2, QMetaData::Public },
+	{ "MSelectclicked()", &slot_3, QMetaData::Public },
+	{ "filterentered()", &slot_4, QMetaData::Public }
+    };
     metaObj = QMetaObject::new_metaobject(
-	"FileSelect", "QDialog",
+	"FileSelect", parentObject,
 	slot_tbl, 5,
 	0, 0,
 #ifndef QT_NO_PROPERTIES
@@ -102,8 +76,41 @@ QMetaObject* FileSelect::staticMetaObject()
 	0, 0,
 #endif // QT_NO_PROPERTIES
 	0, 0 );
-    metaObj->set_slot_access( slot_tbl_access );
-#ifndef QT_NO_PROPERTIES
-#endif // QT_NO_PROPERTIES
+    cleanUp_FileSelect.setMetaObject( metaObj );
     return metaObj;
 }
+
+void* FileSelect::qt_cast( const char* clname )
+{
+    if ( !qstrcmp( clname, "FileSelect" ) )
+	return this;
+    return QDialog::qt_cast( clname );
+}
+
+bool FileSelect::qt_invoke( int _id, QUObject* _o )
+{
+    switch ( _id - staticMetaObject()->slotOffset() ) {
+    case 0: SelectOk(); break;
+    case 1: SelectAll(); break;
+    case 2: dirSelected((int)static_QUType_int.get(_o+1)); break;
+    case 3: MSelectclicked(); break;
+    case 4: filterentered(); break;
+    default:
+	return QDialog::qt_invoke( _id, _o );
+    }
+    return TRUE;
+}
+
+bool FileSelect::qt_emit( int _id, QUObject* _o )
+{
+    return QDialog::qt_emit(_id,_o);
+}
+#ifndef QT_NO_PROPERTIES
+
+bool FileSelect::qt_property( int id, int f, QVariant* v)
+{
+    return QDialog::qt_property( id, f, v);
+}
+
+bool FileSelect::qt_static_property( QObject* , int , int , QVariant* ){ return FALSE; }
+#endif // QT_NO_PROPERTIES

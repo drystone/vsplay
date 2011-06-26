@@ -7,23 +7,24 @@
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include "xsplay.h"
 #include "panel.h"
 
-#include <qapp.h>
+#include <qapplication.h>
 #include <qbrush.h>
-#include <qfiledlg.h>
 #include <qkeycode.h>
-#include <qmsgbox.h>
+#include <qmessagebox.h>
 #include <qpainter.h>
 #include <qpixmap.h>
+#include <qfiledialog.h>
 
 Panel *panel;
 QApplication *mainwidget;
 static bool errorflag=false;
-static char *errorstring;
+static const char *errorstring;
 
 #define BOXWIDTH        2
 #define FONTSIZE        16
@@ -334,7 +335,7 @@ void Panel::load()
 void Panel::loadlist()
 {
   QString fn = QFileDialog::getOpenFileName();
-  if(!fn.isEmpty())
+  if(!(fn.isEmpty() || fn == "-")) // '-' would cause readlist to read stdin
   {
     stop();
     readlist((char *)((const char *)fn));
@@ -404,7 +405,7 @@ void Panel::Framechanged(int frame)
 /*********************/
 /* Interface routine */
 /*********************/
-void Displayerror(char *errstr)
+void Displayerror(const char *errstr)
 {
   errorstring=errstr;
   errorflag=true;

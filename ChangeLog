@@ -1,39 +1,50 @@
-2011-05-09	John Hedges  <john@drystone.co.uk>
+2005-05-01	John Hedges	<jayache@sourceforge.net>
 
-	* Release 0.9.7.0 merges changes from debian's splay_0.9.5.2-11
-	* man page cleanup
-	* fixes random shuffle bug (debian bug #306983)
-	* uses newer libid3 (libid3 3.8.3)
-	* fixes deprecated includes eg <stdio.h> -> <stdio>
-	* replaces deprecated casts from string literal to char*
-	  (now const char*)
-	* fixes bug in libs/mpegtoraw.cc that failed to identify 48KHz sample 
-	  rate
-	* fixes bug in apps/splay.cc where tracks without id3 genre displayed 
-	  usage info in place of genre with -vv(v)
+	* Release 0.9.6.1
 
-2001-05-06	Mikael Hedin  <mikael.hedin@irf.se>
+	* Bugfix upstream from debian fixes shuffle
+	Thanks to Samuel Thibault for the patch
+
+2004-11-15	John Hedges	<jayache@sourceforge.net>
+
+	* Release 0.9.6
+
+	* Added alsa support (see man page for details)
+
+	* Updated xsplay to use qt3 (xsplay remains rudimentary)
+
+	* Updated man page
+
+	* Updated deprecated C++ header names
+
+	* Improved error handling
+
+	* (Re)enabled config.h
+
+	* libs/alsaplayer.cc: ALSA playback implementation
+
+2001-05-06  Mikael Hedin  <mikael.hedin@irf.se>
 
 	* Release 0.9.5.2 (thanks Kenan Esau <kenan.esau@conan.de>)
 
 	* libs/mpegsound.h: Added #include <string.h>
 
-2001-03-19	Mikael Hedin  <mikael.hedin@irf.se>
+2001-03-19  Mikael Hedin  <mikael.hedin@irf.se>
 
 	* Release 0.9.5.1 (thanks for the report, XX)
 	
 	* apps/splay.cc: Forgot to #include <stdlib.h>
 	
-2001-03-17	Mikael Hedin  <mikael.hedin@irf.se>
+2001-03-17  Mikael Hedin  <mikael.hedin@irf.se>
 
 	* Release 0.9.5.
 
-	* apps/splay.cc: Added	option "-k num" to skip frames at the
+	* apps/splay.cc: Added  option "-k num" to skip frames at the
 	beginning. 
 
 	* libs/fileplayer.cc: Added option to start att specified frame.
 
-2001-03-03	Mikael Hedin  <mikael.hedin@irf.se>
+2001-03-03  Mikael Hedin  <mikael.hedin@irf.se>
 
 	* apps/splay.cc: Added a char** with genre names to print instead
 	of the numbers.  
@@ -41,7 +52,7 @@
 	* I think this will become version 1.0.  And then I'm done with
 	this program:)
 
-2001-02-20	Mikael Hedin  <mikael.hedin@irf.se>
+2001-02-20  Mikael Hedin  <mikael.hedin@irf.se>
 
 	* Release 0.9.3.
 	
@@ -50,7 +61,7 @@
 	* libs/fileplayer.cc (playing): Fixed frameinfo to display correct
 	time independent on encoding frequency etc.
 	
-2001-02-15	Mikael Hedin  <mikael.hedin@irf.se>
+2001-02-15  Mikael Hedin  <mikael.hedin@irf.se>
 
 	* Removed wav support.
 
@@ -67,7 +78,7 @@
 
 	* Try to open /dev/sound/dsp if /dev/dsp fails (for devfs)
 
-2001-01-30	Mikael Hedin  <mikael.hedin@irf.se>
+2001-01-30  Mikael Hedin  <mikael.hedin@irf.se>
 
 	* Bumped version to 0.9.1
 
@@ -77,7 +88,7 @@
 	* Added TODO file
 
 
-2000-12-21	Mikael Hedin  <mikael.hedin@irf.se>
+2000-12-21  Mikael Hedin  <mikael.hedin@irf.se>
 
 	* src/splay/splay.cc: Added function to skip to next song by
 	Control-c (ie SIGINT) vhen playing several songs.

@@ -7,16 +7,15 @@
 #include <qdialog.h>
 #include <qdir.h>
 #include <qlabel.h>
-#include <qlined.h>
 #include <qlistbox.h>
-#include <qpushbt.h>
+#include <qlineedit.h>
 
 
 class FileSelect : public QDialog
 {
   Q_OBJECT
 public:
-  FileSelect(QWidget *parent=0,char *name=0);
+  FileSelect(QWidget *parent=0,const char *name=0);
   ~FileSelect();
   void readdir();
 

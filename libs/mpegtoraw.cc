@@ -15,15 +15,15 @@
 
 #include <math.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
+#include <string.h>
+#include <iostream>
 
 #include "mpegsound.h"
 #include "mpegsound_locals.h"
 
 #define MY_PI 3.14159265358979323846
 
-#include <iostream>
 
 Mpegtoraw::Mpegtoraw(Soundinputstream *loader,Soundplayer *player)
 {
@@ -184,7 +184,7 @@ inline void stripfilename(char *dtr,char *str,int max)
 
 // Convert mpeg to raw
 // Mpeg headder class
-void Mpegtoraw::initialize(char *)
+void Mpegtoraw::initialize()
 {
   static bool initialized=false;
 
@@ -383,10 +383,8 @@ bool Mpegtoraw::loadheader(void)
 
   channelbitrate=bitrateindex;
   if(inputstereo)
-  {
     if(channelbitrate==4)channelbitrate=1;
     else channelbitrate-=4;
-  }
 
   if(channelbitrate==1 || channelbitrate==2)tableindex=0; else tableindex=1;
 
@@ -585,8 +583,12 @@ bool Mpegtoraw::run(int frames)
     if(frames<0)
     {
       frames=-frames;
-      player->setsoundtype(outputstereo,16,
-			   frequencies[version][frequency]>>downfrequency);
+      if (!player->setsoundtype(outputstereo,16,
+			   frequencies[version][frequency]>>downfrequency))
+      {
+          seterrorcode(player->geterrorcode());
+          break;
+      }
     }
 
     decodeframe++;
