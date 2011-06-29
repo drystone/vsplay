@@ -351,10 +351,10 @@ protected:
   unsigned int bitoffset;
   unsigned char buffer[4096], * pbits;
 public:
-  void sync(void) { if (bitoffset) { ++pbits; bitoffset = 0; } };
-  bool fillbuffer(int size, Soundinputstream * loader)
+  inline void sync(void) { if (bitoffset) { ++pbits; bitoffset = 0; } };
+  inline bool fillbuffer(int size, Soundinputstream * loader)
     { bitoffset = 0; pbits = buffer; return loader->_readbuffer(buffer, size);};
-  unsigned int getbyte() {
+  inline unsigned int getbyte() {
     return *pbits++;
   };
   unsigned int getbits(unsigned int bits) {
@@ -375,20 +375,20 @@ public:
     bitoffset = (bits + bitoffset) & 7;
     return a >> (8-bitoffset);
   };
-  unsigned int getbit() {
+  inline unsigned int getbit() {
     if (++bitoffset == 8) {
       bitoffset = 0;
       return *pbits++ & 1;
     }
     else return (*pbits & (1 << 8-bitoffset)) ? 1 : 0;
   };
-  bool issync() { return bitoffset == 0; };
-  void prefetch(unsigned int count, unsigned int size) {
+  inline bool issync() { return bitoffset == 0; };
+  inline void prefetch(unsigned int count, unsigned int size) {
     prefetched_size = size;
     prefetched_count = count;
     prefetched_bits = getbits(size * count);
   };
-  unsigned int fetch() {
+  inline unsigned int fetch() {
     return (prefetched_bits >> (--prefetched_count * prefetched_size)) & ~(0xffffffff << prefetched_size);
   };
 };

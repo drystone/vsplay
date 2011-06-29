@@ -1192,20 +1192,8 @@ inline void layer3reorder_1(int version,int frequency,
   int sfb,sfb_start,sfb_lines;
   
   /* NO REORDER FOR LOW 2 SUBBANDS */
-  out[0][ 0]=in[0][ 0];out[0][ 1]=in[0][ 1];out[0][ 2]=in[0][ 2];
-  out[0][ 3]=in[0][ 3];out[0][ 4]=in[0][ 4];out[0][ 5]=in[0][ 5];
-  out[0][ 6]=in[0][ 6];out[0][ 7]=in[0][ 7];out[0][ 8]=in[0][ 8];
-  out[0][ 9]=in[0][ 9];out[0][10]=in[0][10];out[0][11]=in[0][11];
-  out[0][12]=in[0][12];out[0][13]=in[0][13];out[0][14]=in[0][14];
-  out[0][15]=in[0][15];out[0][16]=in[0][16];out[0][17]=in[0][17];
-
-  out[1][ 0]=in[1][ 0];out[1][ 1]=in[1][ 1];out[1][ 2]=in[1][ 2];
-  out[1][ 3]=in[1][ 3];out[1][ 4]=in[1][ 4];out[1][ 5]=in[1][ 5];
-  out[1][ 6]=in[1][ 6];out[1][ 7]=in[1][ 7];out[1][ 8]=in[1][ 8];
-  out[1][ 9]=in[1][ 9];out[1][10]=in[1][10];out[1][11]=in[1][11];
-  out[1][12]=in[1][12];out[1][13]=in[1][13];out[1][14]=in[1][14];
-  out[1][15]=in[1][15];out[1][16]=in[1][16];out[1][17]=in[1][17];
-
+  memcpy(out[0], in[0], sizeof(REAL) * 18);
+  memcpy(out[1], in[1], sizeof(REAL) * 18);
 
   /* REORDERING FOR REST SWITCHED SHORT */
   for(sfb=3,sfb_start=sfBandIndex->s[3],
@@ -1265,10 +1253,7 @@ inline
 void layer3antialias_2(REAL  in[SBLIMIT][SSLIMIT],
 		       REAL out[SBLIMIT][SSLIMIT])
 {
-  out[0][0]=in[0][0];out[0][1]=in[0][1];
-  out[0][2]=in[0][2];out[0][3]=in[0][3];
-  out[0][4]=in[0][4];out[0][5]=in[0][5];
-  out[0][6]=in[0][6];out[0][7]=in[0][7];
+  memcpy(out[0], in[0], sizeof(REAL) * 8);
 
   for(int index=SSLIMIT;index<=(SBLIMIT-1)*SSLIMIT;index+=SSLIMIT)
   {
@@ -1284,11 +1269,7 @@ void layer3antialias_2(REAL  in[SBLIMIT][SSLIMIT],
     out[0][index-SSLIMIT+9]=in[0][index-SSLIMIT+9];
   }
 
-  out[31][ 8]=in[31][ 8];out[31][ 9]=in[31][ 9];
-  out[31][10]=in[31][10];out[31][11]=in[31][11];
-  out[31][12]=in[31][12];out[31][13]=in[31][13];
-  out[31][14]=in[31][14];out[31][15]=in[31][15];
-  out[31][16]=in[31][16];out[31][17]=in[31][17];
+  memcpy(&out[31][8], &in[31][8], sizeof(REAL) * 10);
 }
 
 void Mpegtoraw::layer3reorderandantialias(int ch,int gr,
