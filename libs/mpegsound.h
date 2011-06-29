@@ -345,6 +345,8 @@ private:
 
 class Bitstream
 {
+private:
+  unsigned int prefetched_bits, prefetched_count, prefetched_size;
 protected:
   unsigned int bitoffset;
   unsigned char buffer[4096], * pbits;
@@ -384,6 +386,14 @@ public:
     else return (*pbits & (1 << 8-bitoffset)) ? 1 : 0;
   };
   bool issync() { return bitoffset == 0; };
+  void prefetch(unsigned int count, unsigned int size) {
+    prefetched_size = size;
+    prefetched_count = count;
+    prefetched_bits = getbits(size * count);
+  };
+  unsigned int fetch() {
+    return (prefetched_bits >> (--prefetched_count * prefetched_size)) & ~(0xffffffff << prefetched_size);
+  };
 };
 
 class Mpegbitwindow : public Bitstream
@@ -528,10 +538,6 @@ private:
   layer3scalefactor scalefactors[2];
 
   Mpegbitwindow bitwindow;
-  int wgetbit(void);
-  int wgetbits9(int bits);
-  int wgetbits(int bits);
-
 
   /*************************************/
   /* Decoding functions for each layer */

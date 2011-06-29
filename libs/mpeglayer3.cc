@@ -21,53 +21,6 @@
 #include "mpegsound.h"
 #include "mpegsound_locals.h"
 
-/*
-inline void Mpegbitwindow::wrap(void)
-{
-  int p=bitindex>>3;
-  point&=(WINDOWSIZE-1);
-
-  if(p>=point)
-  {
-    for(register int i=4;i<point;i++)
-      buffer[WINDOWSIZE+i]=buffer[i];
-  }
-  *((int *)(buffer+WINDOWSIZE))=*((int *)buffer);
-}
-
-inline int Mpegbitwindow::getbit(void)
-{
-//  register int r=(buffer[(bitindex>>3)&(WINDOWSIZE-1)]>>(7-(bitindex&7)))&1;
-  register int r=(buffer[bitindex>>3]>>(7-(bitindex&7)))&1;
-  bitindex++;
-  return r;
-};
-
-inline int Mpegbitwindow::getbits9(int bits)
-{
-  register unsigned short a;
-
-#ifndef WORDS_BIGENDIAN
-  {
-    //    int offset=(bitindex>>3)&(WINDOWSIZE-1);
-    int offset=bitindex>>3;
-
-    a=(((unsigned char)buffer[offset])<<8) | ((unsigned char)buffer[offset+1]);
-  }
-#else
-  //  a=*((unsigned short *)(buffer+((bitindex>>3)&(WINDOWSIZE-1))));
-  a=*((unsigned short *)(buffer+((bitindex>>3))));
-#endif
-
-  a<<=(bitindex&7);
-  bitindex+=bits;
-  return (int)((unsigned int)(a>>(16-bits)));
-}
-*/
-inline int Mpegtoraw::wgetbit  (void)    {return bitwindow.getbit  ();    }
-inline int Mpegtoraw::wgetbits9(int bits){return bitwindow.getbits9(bits);}
-inline int Mpegtoraw::wgetbits (int bits){return bitwindow.getbits (bits);}
-
 #define MUL3(a) (((a)<<1)+(a))
 
 #define REAL0 0
@@ -84,18 +37,6 @@ inline int Mpegtoraw::wgetbits (int bits){return bitwindow.getbits (bits);}
 #define PI_24  (PI/24.0)
 #define PI_36  (PI/36.0)
 #define PI_72  (PI/72.0)
-
-#ifdef NATIVE_ASSEMBLY
-inline void long_memset(void * s,unsigned int c,int count)
-{
-__asm__ __volatile__(
-  "cld\n\t"
-  "rep ; stosl\n\t"
-  : /* no output */
-  :"a" (c), "c" (count/4), "D" ((long) s)
-  :"cx","di","memory");
-}
-#endif
 
 #define FOURTHIRDSTABLENUMBER (1<<13)
 
@@ -236,21 +177,25 @@ void Mpegtoraw::layer3initialize(void)
 
 bool Mpegtoraw::layer3getsideinfo(void)
 {
+  unsigned int bits;
+
   sideinfo.main_data_begin=bitstream.getbits(9);
 
   if(!inputstereo)sideinfo.private_bits=bitstream.getbits(5);
   else sideinfo.private_bits=bitstream.getbits(3);
-  
-    sideinfo.ch[LS].scfsi[0]=bitstream.getbit();
-    sideinfo.ch[LS].scfsi[1]=bitstream.getbit();
-    sideinfo.ch[LS].scfsi[2]=bitstream.getbit();
-    sideinfo.ch[LS].scfsi[3]=bitstream.getbit();
+
+  bitstream.prefetch(4,1);  
+  sideinfo.ch[LS].scfsi[0]=bitstream.fetch();
+  sideinfo.ch[LS].scfsi[1]=bitstream.fetch();
+  sideinfo.ch[LS].scfsi[2]=bitstream.fetch();
+  sideinfo.ch[LS].scfsi[3]=bitstream.fetch();
   if(inputstereo)
   {
-    sideinfo.ch[RS].scfsi[0]=bitstream.getbit();
-    sideinfo.ch[RS].scfsi[1]=bitstream.getbit();
-    sideinfo.ch[RS].scfsi[2]=bitstream.getbit();
-    sideinfo.ch[RS].scfsi[3]=bitstream.getbit();
+    bitstream.prefetch(4, 1);
+    sideinfo.ch[RS].scfsi[0]=bitstream.fetch();
+    sideinfo.ch[RS].scfsi[1]=bitstream.fetch();
+    sideinfo.ch[RS].scfsi[2]=bitstream.fetch();
+    sideinfo.ch[RS].scfsi[3]=bitstream.fetch();
   }
 
   for(int gr=0,ch;gr<2;gr++)
@@ -267,13 +212,15 @@ bool Mpegtoraw::layer3getsideinfo(void)
       {
 	gi->block_type      =bitstream.getbits(2);
 	gi->mixed_block_flag=bitstream.getbit();
+
+        bitstream.prefetch(2, 5);
+	gi->table_select[0] =bitstream.fetch();
+	gi->table_select[1] =bitstream.fetch();
 	
-	gi->table_select[0] =bitstream.getbits(5);
-	gi->table_select[1] =bitstream.getbits(5);
-	
-	gi->subblock_gain[0]=bitstream.getbits(3);
-	gi->subblock_gain[1]=bitstream.getbits(3);
-	gi->subblock_gain[2]=bitstream.getbits(3);
+        bitstream.prefetch(3, 3);
+	gi->subblock_gain[0]=bitstream.fetch();
+	gi->subblock_gain[1]=bitstream.fetch();
+	gi->subblock_gain[2]=bitstream.fetch();
 	
 	/* Set region_count parameters since they are implicit in this case. */
 	if(gi->block_type==0)
@@ -289,16 +236,18 @@ bool Mpegtoraw::layer3getsideinfo(void)
       }
       else
       {
-	gi->table_select[0] =bitstream.getbits(5);
-	gi->table_select[1] =bitstream.getbits(5);
-	gi->table_select[2] =bitstream.getbits(5);
+        bitstream.prefetch(3, 5);
+	gi->table_select[0] =bitstream.fetch();
+	gi->table_select[1] =bitstream.fetch();
+	gi->table_select[2] =bitstream.fetch();
 	gi->region0_count   =bitstream.getbits(4);
 	gi->region1_count   =bitstream.getbits(3);
 	gi->block_type      =0;
       }
-      gi->preflag           =bitstream.getbit();
-      gi->scalefac_scale    =bitstream.getbit();
-      gi->count1table_select=bitstream.getbit();
+      bitstream.prefetch(3, 1);
+      gi->preflag           =bitstream.fetch();
+      gi->scalefac_scale    =bitstream.fetch();
+      gi->count1table_select=bitstream.fetch();
 
       gi->generalflag=gi->window_switching_flag && (gi->block_type==2);
 
@@ -329,12 +278,14 @@ bool Mpegtoraw::layer3getsideinfo_2(void)
       gi->block_type      =bitstream.getbits(2);
       gi->mixed_block_flag=bitstream.getbit();
 
-      gi->table_select[0] =bitstream.getbits(5);
-      gi->table_select[1] =bitstream.getbits(5);
+      bitstream.prefetch(5, 2);
+      gi->table_select[0] =bitstream.fetch();
+      gi->table_select[1] =bitstream.fetch();
 	
-      gi->subblock_gain[0]=bitstream.getbits(3);
-      gi->subblock_gain[1]=bitstream.getbits(3);
-      gi->subblock_gain[2]=bitstream.getbits(3);
+      bitstream.prefetch(3, 3);
+      gi->subblock_gain[0]=bitstream.fetch();
+      gi->subblock_gain[1]=bitstream.fetch();
+      gi->subblock_gain[2]=bitstream.fetch();
 	
       /* Set region_count parameters since they are implicit in this case. */
       if(gi->block_type==0)
@@ -350,9 +301,10 @@ bool Mpegtoraw::layer3getsideinfo_2(void)
     }
     else
     {
-      gi->table_select[0] =bitstream.getbits(5);
-      gi->table_select[1] =bitstream.getbits(5);
-      gi->table_select[2] =bitstream.getbits(5);
+      bitstream.prefetch(5, 3);
+      gi->table_select[0] =bitstream.fetch();
+      gi->table_select[1] =bitstream.fetch();
+      gi->table_select[2] =bitstream.fetch();
       gi->region0_count   =bitstream.getbits(4);
       gi->region1_count   =bitstream.getbits(3);
       gi->block_type      =0;
@@ -375,119 +327,76 @@ void Mpegtoraw::layer3getscalefactors(int ch,int gr)
 
   layer3grinfo *gi=&(sideinfo.ch[ch].gr[gr]);
   register layer3scalefactor *sf=(&scalefactors[ch]);
-  int l0,l1;
 
-  {
-    int scale_comp=gi->scalefac_compress;
+  int l0 = slen[0][gi->scalefac_compress];
+  int l1 = slen[1][gi->scalefac_compress];
 
-    l0=slen[0][scale_comp];
-    l1=slen[1][scale_comp];
-  }  
   if(gi->generalflag)
   {
     if(gi->mixed_block_flag)
     {                                 /* MIXED */ /* NEW-ag 11/25 */
-      sf->l[0]=wgetbits9(l0);sf->l[1]=wgetbits9(l0);
-      sf->l[2]=wgetbits9(l0);sf->l[3]=wgetbits9(l0);
-      sf->l[4]=wgetbits9(l0);sf->l[5]=wgetbits9(l0);
-      sf->l[6]=wgetbits9(l0);sf->l[7]=wgetbits9(l0);
+      bitwindow.prefetch(4, l0);
+      for (unsigned int i = 0; i < 4; i++)
+          sf->l[i] = bitwindow.fetch();
 
-      sf->s[0][ 3]=wgetbits9(l0);sf->s[1][ 3]=wgetbits9(l0);
-      sf->s[2][ 3]=wgetbits9(l0);
-      sf->s[0][ 4]=wgetbits9(l0);sf->s[1][ 4]=wgetbits9(l0);
-      sf->s[2][ 4]=wgetbits9(l0);
-      sf->s[0][ 5]=wgetbits9(l0);sf->s[1][ 5]=wgetbits9(l0);
-      sf->s[2][ 5]=wgetbits9(l0);
+      bitwindow.prefetch(4, l0);
+      for (unsigned int i = 4; i < 8; i++)
+          sf->l[i] = bitwindow.fetch();
 
-      sf->s[0][ 6]=wgetbits9(l1);sf->s[1][ 6]=wgetbits9(l1);
-      sf->s[2][ 6]=wgetbits9(l1);
-      sf->s[0][ 7]=wgetbits9(l1);sf->s[1][ 7]=wgetbits9(l1);
-      sf->s[2][ 7]=wgetbits9(l1);
-      sf->s[0][ 8]=wgetbits9(l1);sf->s[1][ 8]=wgetbits9(l1);
-      sf->s[2][ 8]=wgetbits9(l1);
-      sf->s[0][ 9]=wgetbits9(l1);sf->s[1][ 9]=wgetbits9(l1);
-      sf->s[2][ 9]=wgetbits9(l1);
-      sf->s[0][10]=wgetbits9(l1);sf->s[1][10]=wgetbits9(l1);
-      sf->s[2][10]=wgetbits9(l1);
-      sf->s[0][11]=wgetbits9(l1);sf->s[1][11]=wgetbits9(l1);
-      sf->s[2][11]=wgetbits9(l1);
-
-      sf->s[0][12]=sf->s[1][12]=sf->s[2][12]=0;
+      for (unsigned int i = 3; i < 6; i++)
+      {
+        bitwindow.prefetch(3, l0);
+        sf->s[0][i] = bitwindow.fetch();
+        sf->s[1][i] = bitwindow.fetch();
+        sf->s[2][i] = bitwindow.fetch();
+      }
     }
     else 
     {  /* SHORT*/
-      sf->s[0][ 0]=wgetbits9(l0);sf->s[1][ 0]=wgetbits9(l0);
-      sf->s[2][ 0]=wgetbits9(l0);
-      sf->s[0][ 1]=wgetbits9(l0);sf->s[1][ 1]=wgetbits9(l0);
-      sf->s[2][ 1]=wgetbits9(l0);
-      sf->s[0][ 2]=wgetbits9(l0);sf->s[1][ 2]=wgetbits9(l0);
-      sf->s[2][ 2]=wgetbits9(l0);
-      sf->s[0][ 3]=wgetbits9(l0);sf->s[1][ 3]=wgetbits9(l0);
-      sf->s[2][ 3]=wgetbits9(l0);
-      sf->s[0][ 4]=wgetbits9(l0);sf->s[1][ 4]=wgetbits9(l0);
-      sf->s[2][ 4]=wgetbits9(l0);
-      sf->s[0][ 5]=wgetbits9(l0);sf->s[1][ 5]=wgetbits9(l0);
-      sf->s[2][ 5]=wgetbits9(l0);
+      for (unsigned int i = 0; i < 6; i++)
+      {
+        bitwindow.prefetch(3, l0);
+        sf->s[0][i] = bitwindow.fetch();
+        sf->s[1][i] = bitwindow.fetch();
+        sf->s[2][i] = bitwindow.fetch();
+      }
+   }
 
-      sf->s[0][ 6]=wgetbits9(l1);sf->s[1][ 6]=wgetbits9(l1);
-      sf->s[2][ 6]=wgetbits9(l1);
-      sf->s[0][ 7]=wgetbits9(l1);sf->s[1][ 7]=wgetbits9(l1);
-      sf->s[2][ 7]=wgetbits9(l1);
-      sf->s[0][ 8]=wgetbits9(l1);sf->s[1][ 8]=wgetbits9(l1);
-      sf->s[2][ 8]=wgetbits9(l1);
-      sf->s[0][ 9]=wgetbits9(l1);sf->s[1][ 9]=wgetbits9(l1);
-      sf->s[2][ 9]=wgetbits9(l1);
-      sf->s[0][10]=wgetbits9(l1);sf->s[1][10]=wgetbits9(l1);
-      sf->s[2][10]=wgetbits9(l1);
-      sf->s[0][11]=wgetbits9(l1);sf->s[1][11]=wgetbits9(l1);
-      sf->s[2][11]=wgetbits9(l1);
-
-      sf->s[0][12]=sf->s[1][12]=sf->s[2][12]=0;
+   for (unsigned int i = 6; i < 12; i++)
+    {
+      bitwindow.prefetch(3, l1);
+      sf->s[0][i] = bitwindow.fetch();
+      sf->s[1][i] = bitwindow.fetch();
+      sf->s[2][i] = bitwindow.fetch();
     }
+
+    sf->s[0][12] = sf->s[1][12] = sf->s[2][12] = 0;
   }
   else
   {   /* LONG types 0,1,3 */
-    if(gr==0)
+    if (gr == 0 || sideinfo.ch[ch].scfsi[0]==0)
     {
-      sf->l[ 0]=wgetbits9(l0);sf->l[ 1]=wgetbits9(l0);
-      sf->l[ 2]=wgetbits9(l0);sf->l[ 3]=wgetbits9(l0);
-      sf->l[ 4]=wgetbits9(l0);sf->l[ 5]=wgetbits9(l0);
-      sf->l[ 6]=wgetbits9(l0);sf->l[ 7]=wgetbits9(l0);
-      sf->l[ 8]=wgetbits9(l0);sf->l[ 9]=wgetbits9(l0);
-      sf->l[10]=wgetbits9(l0);
-      sf->l[11]=wgetbits9(l1);sf->l[12]=wgetbits9(l1);
-      sf->l[13]=wgetbits9(l1);sf->l[14]=wgetbits9(l1);
-      sf->l[15]=wgetbits9(l1);
-      sf->l[16]=wgetbits9(l1);sf->l[17]=wgetbits9(l1);
-      sf->l[18]=wgetbits9(l1);sf->l[19]=wgetbits9(l1);
-      sf->l[20]=wgetbits9(l1);
+      bitwindow.prefetch(6, l0);
+      for (unsigned int i = 0; i < 6; i++)
+        sf->l[i] = bitwindow.fetch();
     }
-    else
+    if (gr == 0 || sideinfo.ch[ch].scfsi[1]==0)
     {
-      if(sideinfo.ch[ch].scfsi[0]==0)
-      {
-	sf->l[ 0]=wgetbits9(l0);sf->l[ 1]=wgetbits9(l0);
-	sf->l[ 2]=wgetbits9(l0);sf->l[ 3]=wgetbits9(l0);
-	sf->l[ 4]=wgetbits9(l0);sf->l[ 5]=wgetbits9(l0);
-      }
-      if(sideinfo.ch[ch].scfsi[1]==0)
-      {
-	sf->l[ 6]=wgetbits9(l0);sf->l[ 7]=wgetbits9(l0);
-	sf->l[ 8]=wgetbits9(l0);sf->l[ 9]=wgetbits9(l0);
-	sf->l[10]=wgetbits9(l0);
-      }
-      if(sideinfo.ch[ch].scfsi[2]==0)
-      {
-	sf->l[11]=wgetbits9(l1);sf->l[12]=wgetbits9(l1);
-	sf->l[13]=wgetbits9(l1);sf->l[14]=wgetbits9(l1);
-	sf->l[15]=wgetbits9(l1);
-      }
-      if(sideinfo.ch[ch].scfsi[3]==0)
-      {
-	sf->l[16]=wgetbits9(l1);sf->l[17]=wgetbits9(l1);
-	sf->l[18]=wgetbits9(l1);sf->l[19]=wgetbits9(l1);
-	sf->l[20]=wgetbits9(l1);
-      }
+      bitwindow.prefetch(5, l0);
+      for (unsigned int i = 6; i < 11; i++)
+        sf->l[i] = bitwindow.fetch();
+    }
+    if (gr == 0 || sideinfo.ch[ch].scfsi[2]==0)
+    {
+      bitwindow.prefetch(5, l1);
+      for (unsigned int i = 11; i < 16; i++)
+        sf->l[i] = bitwindow.fetch();
+    }
+    if (gr == 0 || sideinfo.ch[ch].scfsi[3]==0)
+    {
+      bitwindow.prefetch(5, l1);
+      for (unsigned int i = 16; i < 21; i++)
+        sf->l[i] = bitwindow.fetch();
     }
     sf->l[21]=sf->l[22]=0;
   }
@@ -593,7 +502,7 @@ void Mpegtoraw::layer3getscalefactors_2(int ch)
       for(k=i=0;i<4;i++)
 	for(j=0;j<si[i];j++,k++)
 	  if(slen[i]==0)sb[k]=0;
-	  else sb[k]=wgetbits(slen[i]);
+	  else sb[k]=bitwindow.getbits(slen[i]);
     }
   }
 
@@ -650,21 +559,21 @@ inline void Mpegtoraw::huffmandecoder_1(const HUFFMANCODETABLE *h,int *x,int *y)
 
       if(h->linbits)
       {
-	if((h->xlen)==(unsigned)xx)xx+=wgetbits(h->linbits);
-	if(xx)if(wgetbit())xx=-xx;
-	if((h->ylen)==(unsigned)yy)yy+=wgetbits(h->linbits);
-	if(yy)if(wgetbit())yy=-yy;
+	if((h->xlen)==(unsigned)xx)xx+=bitwindow.getbits(h->linbits);
+	if(xx)if(bitwindow.getbit())xx=-xx;
+	if((h->ylen)==(unsigned)yy)yy+=bitwindow.getbits(h->linbits);
+	if(yy)if(bitwindow.getbit())yy=-yy;
       }
       else
       {
-	if(xx)if(wgetbit())xx=-xx;
-	if(yy)if(wgetbit())yy=-yy;
+	if(xx)if(bitwindow.getbit())xx=-xx;
+	if(yy)if(bitwindow.getbit())yy=-yy;
       }
       *x=xx;*y=yy;
       break;
     } 
 
-    point+=h->val[point][wgetbit()];
+    point+=h->val[point][bitwindow.getbit()];
     
     level>>=1;
     if(!(level || ((unsigned)point<ht->treelen)))
@@ -676,9 +585,9 @@ inline void Mpegtoraw::huffmandecoder_1(const HUFFMANCODETABLE *h,int *x,int *y)
 
       // h->xlen and h->ylen can't be 1 under tablename 32
       //      if(xx)
-	if(wgetbit())xx=-xx;
+	if(bitwindow.getbit())xx=-xx;
       //      if(yy)
-	if(wgetbit())yy=-yy;
+	if(bitwindow.getbit())yy=-yy;
 
       *x=xx;*y=yy;
       break;
@@ -700,20 +609,20 @@ inline void Mpegtoraw::huffmandecoder_2(const HUFFMANCODETABLE *h,
     {   /*end of tree*/
       register int t=h->val[point][1];
 
-      if(t&8)*v=1-(wgetbit()<<1); else *v=0;
-      if(t&4)*w=1-(wgetbit()<<1); else *w=0;
-      if(t&2)*x=1-(wgetbit()<<1); else *x=0;
-      if(t&1)*y=1-(wgetbit()<<1); else *y=0;
+      if(t&8)*v=1-(bitwindow.getbit()<<1); else *v=0;
+      if(t&4)*w=1-(bitwindow.getbit()<<1); else *w=0;
+      if(t&2)*x=1-(bitwindow.getbit()<<1); else *x=0;
+      if(t&1)*y=1-(bitwindow.getbit()<<1); else *y=0;
       break;
     } 
-    point+=h->val[point][wgetbit()];
+    point+=h->val[point][bitwindow.getbit()];
     level>>=1;
     if(!(level || ((unsigned)point<ht->treelen)))
     {
-      *v=1-(wgetbit()<<1);
-      *w=1-(wgetbit()<<1);
-      *x=1-(wgetbit()<<1);
-      *y=1-(wgetbit()<<1);
+      *v=1-(bitwindow.getbit()<<1);
+      *w=1-(bitwindow.getbit()<<1);
+      *x=1-(bitwindow.getbit()<<1);
+      *y=1-(bitwindow.getbit()<<1);
       break;
     }
   }
