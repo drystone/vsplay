@@ -44,7 +44,7 @@ Mpegfileplayer::~Mpegfileplayer()
   if(server)delete server;
 }
 
-bool Mpegfileplayer::openfile(char *filename)
+bool Mpegfileplayer::openfile(const char *filename)
 {
 // Loader
   {

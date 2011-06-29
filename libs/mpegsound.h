@@ -151,13 +151,13 @@ public:
   Soundinputstream();
   virtual ~Soundinputstream();
 
-  static Soundinputstream *hopen(char *filename,int *errcode);
+  static Soundinputstream *hopen(const char *filename,int *errcode);
 
   int geterrorcode(void)  {return __errorcode;};
 
-  virtual bool open(char *filename)              =0;
+  virtual bool open(const char *filename)              =0;
   virtual int  getbytedirect(void)               =0;
-  virtual bool _readbuffer(char *buffer,int size)=0;
+  virtual bool _readbuffer(unsigned char *buffer,int size)=0;
   virtual bool eof(void)                         =0;
   virtual int  getblock(char *buffer,int size)   =0;
 
@@ -179,8 +179,8 @@ public:
   Soundinputstreamfromfile()  {fp=NULL;};
   ~Soundinputstreamfromfile();
 
-  bool open(char *filename);
-  bool _readbuffer(char *buffer,int bytes);
+  bool open(const char *filename);
+  bool _readbuffer(unsigned char *buffer,int bytes);
   int  getbytedirect(void);
   bool eof(void);
   int  getblock(char *buffer,int size);
@@ -201,8 +201,8 @@ public:
   Soundinputstreamfromhttp();
   ~Soundinputstreamfromhttp();
 
-  bool open(char *filename);
-  bool _readbuffer(char *buffer,int bytes);
+  bool open(const char *filename);
+  bool _readbuffer(unsigned char *buffer,int bytes);
   int  getbytedirect(void);
   bool eof(void);
   int  getblock(char *buffer,int size);
@@ -217,7 +217,7 @@ private:
 
   bool writestring(int fd,char *string);
   bool readstring(char *string,int maxlen,FILE *f);
-  FILE *http_open(char *url);
+  FILE *http_open(const char *url);
 };
 
 
@@ -341,7 +341,73 @@ private:
   char buffer[2*WINDOWSIZE];
 };
 
+class Bitstream
+{
+  unsigned int bitoffset;
+  unsigned char buffer[4096], * pbits;
+public:
+  void sync(void) { if (bitoffset) { ++pbits; bitoffset = 0; } };
+  bool fillbuffer(int size, Soundinputstream * loader)
+    { bitoffset = 0; pbits = buffer; return loader->_readbuffer(buffer, size);};
+  unsigned int getbyte() {
+    return *pbits++;
+  };
+  unsigned int getbits(unsigned int bits) {
+    register int a = *pbits & (0xff >> bitoffset);
+    if (bits >= 8)
+    {
+      a = (a << 8) | *++pbits;
+      if (bits >= 16)
+      {
+        a = (a << 8) | *++pbits;
+        if (bits >= 24)
+          a = (a << 8) | *++pbits;
+      }
+    }
+    if (bitoffset + (bits & 7) >= 8)
+      a = (a << 8 ) | *++pbits;
 
+    bitoffset = (bits + bitoffset) & 7;
+    return a >> (8-bitoffset);
+  };
+  unsigned int getbits8() {
+    return (*pbits << bitoffset) | (*++pbits & (0xff >> 8-bitoffset));
+  };
+  unsigned int getbit() {
+    if (++bitoffset == 8) {
+      bitoffset = 0;
+      return *pbits++ & 1;
+    }
+    else return (*pbits & (1 << 8-bitoffset)) ? 1 : 0;
+  };
+  bool issync() { return bitoffset == 0; };
+};
+
+/*
+class Mpegbitwindow : public Bitstream
+{
+  unsigned char buffer[2*WINDOWSIZE];
+  unsigned int point;
+public:
+  Mpegbitwindow() { pbits = buffer; bitoffset = 0; point = 0; };
+
+  void initialize(void) { pbits = buffer; bitoffset = 0; point = 0; };
+  int  gettotalbit(void) const {return ((pbits - buffer) << 8) + bitoffset; };
+  void putbyte(int c) { buffer[point & (WINDOWSIZE - 1)] = c; point++; };
+  void wrap(void)
+  {
+    point &= (WINDOWSIZE - 1);
+    if((pbits - buffer) >= point)
+    {
+      for (register int i = 4; i < point; i++)
+        buffer[WINDOWSIZE + i]=buffer[i];
+    }
+    *((int *)(buffer+WINDOWSIZE))=*((int *)buffer);
+  }
+  void rewind(int bits) { pbits -= (bits >> 3); if ((bits & 7) > bitoffset) { bitoffset += 8; --pbits; } bitoffset -= (bits & 7); };
+  void forward(int bits) { pbits += (bits >> 3); bitoffset += (bits & 7); if (bitoffset >= 8) { bitoffset -=8; ++pbits; } };
+};
+*/
 
 // Class for converting mpeg format to raw format
 class Mpegtoraw
@@ -444,22 +510,8 @@ private:
   /*****************************/
 private:
   Soundinputstream *loader;   // Interface
-  union
-  {
-    unsigned char store[4];
-    unsigned int  current;
-  }u;
-  char buffer[4096];
-  int  bitindex;
-  bool fillbuffer(int size){bitindex=0;return loader->_readbuffer(buffer,size);};
-  void sync(void)  {bitindex=(bitindex+7)&0xFFFFFFF8;};
-  bool issync(void){return (bitindex&7);};
-  int getbyte(void);
-  int getbits(int bits);
-  int getbits9(int bits);
-  int getbits8(void);
-  int getbit(void);
 
+  Bitstream bitstream;
   /********************/
   /* Global variables */
   /********************/
@@ -592,7 +644,7 @@ public:
 
   int geterrorcode(void)        {return __errorcode;};
 
-  virtual bool openfile(char *filename)=0;
+  virtual bool openfile(const char *filename)=0;
   virtual void setforcetomono(bool flag)            =0;
   virtual bool playing(int verbose,bool frameinfo, int startframe)                 =0;
 #ifdef PTHREADEDMPEG
@@ -615,7 +667,7 @@ public:
   Mpegfileplayer(Soundplayer* player);
   ~Mpegfileplayer();
 
-  bool openfile(char *filename);
+  bool openfile(const char *filename);
   void setforcetomono(bool flag);
   void setdownfrequency(int value);
   bool playing(int verbose, bool frameinfo, int startframe);

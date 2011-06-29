@@ -122,7 +122,7 @@ char *proxyurl=NULL;
 unsigned long proxyip=0;
 unsigned int proxyport;
 
-FILE *Soundinputstreamfromhttp::http_open(char *url)
+FILE *Soundinputstreamfromhttp::http_open(const char *url)
 {
   char *purl=NULL,*host,*request,*sptr;
   char agent[50];
@@ -244,7 +244,7 @@ Soundinputstreamfromhttp::~Soundinputstreamfromhttp()
   if(fp)fclose(fp);
 }
 
-bool Soundinputstreamfromhttp::open(char *url)
+bool Soundinputstreamfromhttp::open(const char *url)
 {
   if((fp=http_open(url))==NULL)
   {
@@ -268,7 +268,7 @@ int Soundinputstreamfromhttp::getbytedirect(void)
   return c;
 }
 
-bool Soundinputstreamfromhttp::_readbuffer(char *buffer,int size)
+bool Soundinputstreamfromhttp::_readbuffer(unsigned char *buffer,int size)
 {
   if(fread(buffer,size,1,fp)!=1)
   {

@@ -22,7 +22,7 @@ Soundinputstreamfromfile::~Soundinputstreamfromfile()
   if(fp)fclose(fp);
 }
 
-bool Soundinputstreamfromfile::open(char *filename)
+bool Soundinputstreamfromfile::open(const char *filename)
 {
   struct stat buf;
 
@@ -54,7 +54,7 @@ int Soundinputstreamfromfile::getbytedirect(void)
   return c;
 }
 
-bool Soundinputstreamfromfile::_readbuffer(char *buffer,int size)
+bool Soundinputstreamfromfile::_readbuffer(unsigned char *buffer,int size)
 {
   if(fread(buffer,size,1,fp)!=1)
   {

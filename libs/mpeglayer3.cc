@@ -235,21 +235,21 @@ void Mpegtoraw::layer3initialize(void)
 
 bool Mpegtoraw::layer3getsideinfo(void)
 {
-  sideinfo.main_data_begin=getbits(9);
+  sideinfo.main_data_begin=bitstream.getbits(9);
 
-  if(!inputstereo)sideinfo.private_bits=getbits(5);
-  else sideinfo.private_bits=getbits(3);
+  if(!inputstereo)sideinfo.private_bits=bitstream.getbits(5);
+  else sideinfo.private_bits=bitstream.getbits(3);
   
-    sideinfo.ch[LS].scfsi[0]=getbit();
-    sideinfo.ch[LS].scfsi[1]=getbit();
-    sideinfo.ch[LS].scfsi[2]=getbit();
-    sideinfo.ch[LS].scfsi[3]=getbit();
+    sideinfo.ch[LS].scfsi[0]=bitstream.getbit();
+    sideinfo.ch[LS].scfsi[1]=bitstream.getbit();
+    sideinfo.ch[LS].scfsi[2]=bitstream.getbit();
+    sideinfo.ch[LS].scfsi[3]=bitstream.getbit();
   if(inputstereo)
   {
-    sideinfo.ch[RS].scfsi[0]=getbit();
-    sideinfo.ch[RS].scfsi[1]=getbit();
-    sideinfo.ch[RS].scfsi[2]=getbit();
-    sideinfo.ch[RS].scfsi[3]=getbit();
+    sideinfo.ch[RS].scfsi[0]=bitstream.getbit();
+    sideinfo.ch[RS].scfsi[1]=bitstream.getbit();
+    sideinfo.ch[RS].scfsi[2]=bitstream.getbit();
+    sideinfo.ch[RS].scfsi[3]=bitstream.getbit();
   }
 
   for(int gr=0,ch;gr<2;gr++)
@@ -257,22 +257,22 @@ bool Mpegtoraw::layer3getsideinfo(void)
     {
       layer3grinfo *gi=&(sideinfo.ch[ch].gr[gr]);
 
-      gi->part2_3_length       =getbits(12);
-      gi->big_values           =getbits(9);
-      gi->global_gain          =getbits(8);
-      gi->scalefac_compress    =getbits(4);
-      gi->window_switching_flag=getbit();
+      gi->part2_3_length       =bitstream.getbits(12);
+      gi->big_values           =bitstream.getbits(9);
+      gi->global_gain          =bitstream.getbits(8);
+      gi->scalefac_compress    =bitstream.getbits(4);
+      gi->window_switching_flag=bitstream.getbit();
       if(gi->window_switching_flag)
       {
-	gi->block_type      =getbits(2);
-	gi->mixed_block_flag=getbit();
+	gi->block_type      =bitstream.getbits(2);
+	gi->mixed_block_flag=bitstream.getbit();
 	
-	gi->table_select[0] =getbits(5);
-	gi->table_select[1] =getbits(5);
+	gi->table_select[0] =bitstream.getbits(5);
+	gi->table_select[1] =bitstream.getbits(5);
 	
-	gi->subblock_gain[0]=getbits(3);
-	gi->subblock_gain[1]=getbits(3);
-	gi->subblock_gain[2]=getbits(3);
+	gi->subblock_gain[0]=bitstream.getbits(3);
+	gi->subblock_gain[1]=bitstream.getbits(3);
+	gi->subblock_gain[2]=bitstream.getbits(3);
 	
 	/* Set region_count parameters since they are implicit in this case. */
 	if(gi->block_type==0)
@@ -288,16 +288,16 @@ bool Mpegtoraw::layer3getsideinfo(void)
       }
       else
       {
-	gi->table_select[0] =getbits(5);
-	gi->table_select[1] =getbits(5);
-	gi->table_select[2] =getbits(5);
-	gi->region0_count   =getbits(4);
-	gi->region1_count   =getbits(3);
+	gi->table_select[0] =bitstream.getbits(5);
+	gi->table_select[1] =bitstream.getbits(5);
+	gi->table_select[2] =bitstream.getbits(5);
+	gi->region0_count   =bitstream.getbits(4);
+	gi->region1_count   =bitstream.getbits(3);
 	gi->block_type      =0;
       }
-      gi->preflag           =getbit();
-      gi->scalefac_scale    =getbit();
-      gi->count1table_select=getbit();
+      gi->preflag           =bitstream.getbit();
+      gi->scalefac_scale    =bitstream.getbit();
+      gi->count1table_select=bitstream.getbit();
 
       gi->generalflag=gi->window_switching_flag && (gi->block_type==2);
 
@@ -309,31 +309,31 @@ bool Mpegtoraw::layer3getsideinfo(void)
 
 bool Mpegtoraw::layer3getsideinfo_2(void)
 {
-  sideinfo.main_data_begin=getbits(8);
+  sideinfo.main_data_begin=bitstream.getbits(8);
 
-  if(!inputstereo)sideinfo.private_bits=getbit();
-  else sideinfo.private_bits=getbits(2);
+  if(!inputstereo)sideinfo.private_bits=bitstream.getbit();
+  else sideinfo.private_bits=bitstream.getbits(2);
   
   for(int ch=0;;ch++)
   {
     layer3grinfo *gi=&(sideinfo.ch[ch].gr[0]);
 
-    gi->part2_3_length       =getbits(12);
-    gi->big_values           =getbits(9);
-    gi->global_gain          =getbits(8);
-    gi->scalefac_compress    =getbits(9);
-    gi->window_switching_flag=getbit();
+    gi->part2_3_length       =bitstream.getbits(12);
+    gi->big_values           =bitstream.getbits(9);
+    gi->global_gain          =bitstream.getbits(8);
+    gi->scalefac_compress    =bitstream.getbits(9);
+    gi->window_switching_flag=bitstream.getbit();
     if(gi->window_switching_flag)
     {
-      gi->block_type      =getbits(2);
-      gi->mixed_block_flag=getbit();
+      gi->block_type      =bitstream.getbits(2);
+      gi->mixed_block_flag=bitstream.getbit();
 
-      gi->table_select[0] =getbits(5);
-      gi->table_select[1] =getbits(5);
+      gi->table_select[0] =bitstream.getbits(5);
+      gi->table_select[1] =bitstream.getbits(5);
 	
-      gi->subblock_gain[0]=getbits(3);
-      gi->subblock_gain[1]=getbits(3);
-      gi->subblock_gain[2]=getbits(3);
+      gi->subblock_gain[0]=bitstream.getbits(3);
+      gi->subblock_gain[1]=bitstream.getbits(3);
+      gi->subblock_gain[2]=bitstream.getbits(3);
 	
       /* Set region_count parameters since they are implicit in this case. */
       if(gi->block_type==0)
@@ -349,15 +349,15 @@ bool Mpegtoraw::layer3getsideinfo_2(void)
     }
     else
     {
-      gi->table_select[0] =getbits(5);
-      gi->table_select[1] =getbits(5);
-      gi->table_select[2] =getbits(5);
-      gi->region0_count   =getbits(4);
-      gi->region1_count   =getbits(3);
+      gi->table_select[0] =bitstream.getbits(5);
+      gi->table_select[1] =bitstream.getbits(5);
+      gi->table_select[2] =bitstream.getbits(5);
+      gi->region0_count   =bitstream.getbits(4);
+      gi->region1_count   =bitstream.getbits(3);
       gi->block_type      =0;
     }
-    gi->scalefac_scale    =getbit();
-    gi->count1table_select=getbit();
+    gi->scalefac_scale    =bitstream.getbit();
+    gi->count1table_select=bitstream.getbit();
     
     gi->generalflag=gi->window_switching_flag && (gi->block_type==2);
     
@@ -1703,15 +1703,15 @@ void Mpegtoraw::extractlayer3(void)
 
     layer3getsideinfo();
 	 
-    if(issync())
+    if(bitstream.issync())
     {
       for(register int i=layer3slots;i>0;i--)  // read main data.
-	bitwindow.putbyte(getbyte());
+	bitwindow.putbyte(bitstream.getbyte());
     }
     else
     {
       for(register int i=layer3slots;i>0;i--)  // read main data.
-	bitwindow.putbyte(getbits8());
+	bitwindow.putbyte(bitstream.getbits8());
     }
 
     main_data_end=bitwindow.gettotalbit()>>3;// of previous frame
@@ -1814,15 +1814,15 @@ void Mpegtoraw::extractlayer3_2(void)
 
     layer3getsideinfo_2();
 	 
-    if(issync())
+    if(bitstream.issync())
     {
       for(register int i=layer3slots;i>0;i--)  // read main data.
-	bitwindow.putbyte(getbyte());
+	bitwindow.putbyte(bitstream.getbyte());
     }
     else
     {
       for(register int i=layer3slots;i>0;i--)  // read main data.
-	bitwindow.putbyte(getbits8());
+	bitwindow.putbyte(bitstream.getbits8());
     }
     bitwindow.wrap();
 

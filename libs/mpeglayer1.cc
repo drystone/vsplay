@@ -52,34 +52,34 @@ void Mpegtoraw::extractlayer1(void)
 // Bitalloc
   for(i=0;i<s;i++)
   {
-    bitalloc[LS][i]=getbits(4);
-    bitalloc[RS][i]=getbits(4);
+    bitalloc[LS][i]=bitstream.getbits(4);
+    bitalloc[RS][i]=bitstream.getbits(4);
   }
   for(;i<MAXSUBBAND;i++)
     bitalloc[LS][i]=
-    bitalloc[RS][i]=getbits(4);
+    bitalloc[RS][i]=bitstream.getbits(4);
 
 // Scale index
   if(inputstereo)
     for(i=0;i<MAXSUBBAND;i++)
     {
-      if(bitalloc[LS][i])scalefactor[LS][i]=scalefactorstable[getbits(6)];
-      if(bitalloc[RS][i])scalefactor[RS][i]=scalefactorstable[getbits(6)];
+      if(bitalloc[LS][i])scalefactor[LS][i]=scalefactorstable[bitstream.getbits(6)];
+      if(bitalloc[RS][i])scalefactor[RS][i]=scalefactorstable[bitstream.getbits(6)];
     }
   else
     for(i=0;i<MAXSUBBAND;i++)
-      if(bitalloc[LS][i])scalefactor[LS][i]=scalefactorstable[getbits(6)];
+      if(bitalloc[LS][i])scalefactor[LS][i]=scalefactorstable[bitstream.getbits(6)];
 
   for(l=0;l<SCALEBLOCK;l++)
   {
     // Sample
     for(i=0;i<s;i++)
     {
-      if((j=bitalloc[LS][i]))sample[LS][i]=getbits(j+1);
-      if((j=bitalloc[RS][i]))sample[RS][i]=getbits(j+1);
+      if((j=bitalloc[LS][i]))sample[LS][i]=bitstream.getbits(j+1);
+      if((j=bitalloc[RS][i]))sample[RS][i]=bitstream.getbits(j+1);
     }
     for(;i<MAXSUBBAND;i++)
-      if((j=bitalloc[LS][i]))sample[LS][i]=sample[RS][i]=getbits(j+1);
+      if((j=bitalloc[LS][i]))sample[LS][i]=sample[RS][i]=bitstream.getbits(j+1);
 
 
     // Fraction

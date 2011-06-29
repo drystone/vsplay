@@ -8,6 +8,7 @@
 #ifndef _L__SOUND_LOCALS__
 #define _L__SOUND_LOCALS__
 
+/*
 // Inline functions
 inline int Mpegtoraw::getbyte(void)
 {
@@ -61,5 +62,5 @@ inline int Mpegtoraw::getbit(void)
   bitindex++;
   return r;
 };
-
+*/
 #endif

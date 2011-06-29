@@ -41,7 +41,7 @@ Mpegtoraw::~Mpegtoraw()
 {
   if(frameoffsets)delete [] frameoffsets;
 }
-
+/*
 #ifndef WORDS_BIGENDIAN
 #define _KEY 0
 #else
@@ -91,7 +91,7 @@ int Mpegtoraw::getbits(int bits)
 
   return (u.current>>8);
 }
-
+*/
 void Mpegtoraw::setforcetomono(bool flag)
 {
   forcetomonoflag=flag;
@@ -295,7 +295,7 @@ bool Mpegtoraw::loadheader(void)
   register int c;
   bool flag;
 
-  sync();
+  bitstream.sync();
 
 // Synchronize
   flag=false;
@@ -321,7 +321,7 @@ bool Mpegtoraw::loadheader(void)
       }
     }
     else if (c=='I') { // possible ID3v2 tag
-        char buf[10];
+        unsigned char buf[10];
         int c2,c3;
         int length;
 
@@ -431,12 +431,12 @@ bool Mpegtoraw::loadheader(void)
     }
   }
 
-  if(!fillbuffer(framesize-4))seterrorcode(SOUND_ERROR_FILEREADFAIL);
+  if(!bitstream.fillbuffer(framesize-4, loader))seterrorcode(SOUND_ERROR_FILEREADFAIL);
 
   if(!protection)
   {
-    getbyte();                      // CRC, Not check!!
-    getbyte();
+    bitstream.getbyte();                      // CRC, Not check!!
+    bitstream.getbyte();
   }
 
 
