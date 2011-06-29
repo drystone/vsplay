@@ -321,6 +321,7 @@ private:
 /* Data format converter classes */
 /*********************************/
 // Class for Mpeg layer3
+/*
 class Mpegbitwindow
 {
 public:
@@ -340,9 +341,11 @@ private:
   int  point,bitindex;
   char buffer[2*WINDOWSIZE];
 };
+*/
 
 class Bitstream
 {
+protected:
   unsigned int bitoffset;
   unsigned char buffer[4096], * pbits;
 public:
@@ -383,7 +386,6 @@ public:
   bool issync() { return bitoffset == 0; };
 };
 
-/*
 class Mpegbitwindow : public Bitstream
 {
   unsigned char buffer[2*WINDOWSIZE];
@@ -392,7 +394,7 @@ public:
   Mpegbitwindow() { pbits = buffer; bitoffset = 0; point = 0; };
 
   void initialize(void) { pbits = buffer; bitoffset = 0; point = 0; };
-  int  gettotalbit(void) const {return ((pbits - buffer) << 8) + bitoffset; };
+  int  gettotalbit(void) const {return ((pbits - buffer) << 3) + bitoffset; };
   void putbyte(int c) { buffer[point & (WINDOWSIZE - 1)] = c; point++; };
   void wrap(void)
   {
@@ -406,8 +408,8 @@ public:
   }
   void rewind(int bits) { pbits -= (bits >> 3); if ((bits & 7) > bitoffset) { bitoffset += 8; --pbits; } bitoffset -= (bits & 7); };
   void forward(int bits) { pbits += (bits >> 3); bitoffset += (bits & 7); if (bitoffset >= 8) { bitoffset -=8; ++pbits; } };
+  inline unsigned int getbits9(int bits) { return getbits(bits); };
 };
-*/
 
 // Class for converting mpeg format to raw format
 class Mpegtoraw

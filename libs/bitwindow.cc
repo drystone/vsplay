@@ -16,7 +16,7 @@
 #else
 #define _KEY 3
 #endif
-
+/*
 int Mpegbitwindow::getbits(int bits)
 {
   union
@@ -61,4 +61,4 @@ int Mpegbitwindow::getbits(int bits)
   bitindex-=bi;
 
   return (u.current>>8);
-}
+}*/

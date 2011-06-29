@@ -21,6 +21,7 @@
 #include "mpegsound.h"
 #include "mpegsound_locals.h"
 
+/*
 inline void Mpegbitwindow::wrap(void)
 {
   int p=bitindex>>3;
@@ -62,7 +63,7 @@ inline int Mpegbitwindow::getbits9(int bits)
   bitindex+=bits;
   return (int)((unsigned int)(a>>(16-bits)));
 }
-
+*/
 inline int Mpegtoraw::wgetbit  (void)    {return bitwindow.getbit  ();    }
 inline int Mpegtoraw::wgetbits9(int bits){return bitwindow.getbits9(bits);}
 inline int Mpegtoraw::wgetbits (int bits){return bitwindow.getbits (bits);}
