@@ -242,6 +242,7 @@ public:
   virtual int  getblocksize(void);
 
   int geterrorcode(void) {return __errorcode;};
+  virtual void drain(void) = 0;
 
 protected:
   bool seterrorcode(int errorno) {__errorcode=errorno; return false;};
@@ -259,6 +260,7 @@ public:
   bool initialize(const char *filename);
   bool setsoundtype(int stereo,int samplesize,int speed);
   bool putblock(void *buffer,int size);
+  void drain(void) {};
 
 private:
   int filehandle;
@@ -287,6 +289,7 @@ public:
 
   static const char *defaultdevice;
   static int  setvolume(int volume);
+  void drain(void) {};
 
 private:
   short int rawbuffer[RAWDATASIZE];
@@ -309,6 +312,7 @@ public:
   bool setsoundtype(int stereo,int samplesize,int speed);
   bool putblock(void *buffer,int size);
   void abort(void);
+  void drain() { snd_pcm_drain(_device_handle); };
 
 private:
   snd_pcm_t *_device_handle;

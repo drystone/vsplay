@@ -33,7 +33,7 @@ using namespace std;
 
 #include "mpegsound.h"
 
-#include "splay.h"
+#include "vsplay.h"
 
 static const char *help=
 "\t-2 : playing with half frequency.\n"
@@ -61,7 +61,7 @@ bool single_threaded = false;
 /***********************/
 inline void error(int n)
 {
-  cerr << splay_progname << " " << splay_Sounderrors[n-1] << endl;
+  cerr << vsplay_progname << " " << vsplay_Sounderrors[n-1] << endl;
 }
 
 static void playing(Fileplayer *player)
@@ -69,19 +69,19 @@ static void playing(Fileplayer *player)
   if(player->geterrorcode()>0)error(player->geterrorcode());
   else
   {
-    player->setforcetomono(splay_forcetomonoflag);
+    player->setforcetomono(vsplay_forcetomonoflag);
 #ifdef PTHREADEDMPEG
     if (!single_threaded)
     {
-      player->playingwiththread(splay_verbose-1,splay_frameinfo,
-  			        splay_threadnum, splay_startframe); 
+      player->playingwiththread(vsplay_verbose-1,vsplay_frameinfo,
+  			        vsplay_threadnum, vsplay_startframe); 
     }
     else
     {
-      player->playing(splay_verbose-1,splay_frameinfo,splay_startframe);
+      player->playing(vsplay_verbose-1,vsplay_frameinfo,vsplay_startframe);
     }
 #else
-    player->playing(splay_verbose-1,splay_frameinfo,splay_startframe);
+    player->playing(vsplay_verbose-1,vsplay_frameinfo,vsplay_startframe);
 #endif  // PTHREADEDMPEG
     if(player->geterrorcode()>0)error(player->geterrorcode());
   }
@@ -135,10 +135,10 @@ ostream& operator<<(ostream& s, const ID3_Tag* tag )
 
 static void play(char *filename, Soundplayer* device)
 {
-  if( splay_verbose-- )
+  if( vsplay_verbose-- )
     cout << filename << ":" << endl;
 
-  if( splay_verbose>0 && strcmp(filename, "-") != 0) // cant do ID3 stuff on stdin
+  if( vsplay_verbose>0 && strcmp(filename, "-") != 0) // cant do ID3 stuff on stdin
     {
 #ifdef TAGLIB
       cout << *TagLib::MPEG::File(filename).tag();
@@ -156,7 +156,7 @@ static void play(char *filename, Soundplayer* device)
       error(player.geterrorcode());
       return;
     }
-  player.setdownfrequency(splay_downfrequency);
+  player.setdownfrequency(vsplay_downfrequency);
   playing(&player);
 }
 
@@ -237,7 +237,7 @@ int main(int argc,char *argv[])
   char const * devicename = NULL;
   bool stdin_only = false;
 
-  splay_progname=argv[0];
+  vsplay_progname=argv[0];
 
   while((c=getopt(argc,argv,
 		  "VM2mfrsvd:k:l:S"
@@ -255,16 +255,16 @@ int main(int argc,char *argv[])
 		      "\n",PACKAGE,VERSION);
                return 0;
     case 'M':stdin_only           =true;break;
-    case '2':splay_downfrequency  =   1;break;
-    case 'f':splay_frameinfo      =true;break;
-    case 'm':splay_forcetomonoflag=true;break;
-    case 'r':splay_repeatflag     =true;break;
-    case 's':splay_shuffleflag    =true;break;
-    case 'v':splay_verbose++;           break;
+    case '2':vsplay_downfrequency  =   1;break;
+    case 'f':vsplay_frameinfo      =true;break;
+    case 'm':vsplay_forcetomonoflag=true;break;
+    case 'r':vsplay_repeatflag     =true;break;
+    case 's':vsplay_shuffleflag    =true;break;
+    case 'v':vsplay_verbose++;           break;
       
     case 'd':devicename=optarg;   break;
-    case 'k':splay_startframe=atoi(optarg);   break;
-    case 'l':if(splay_verbose)
+    case 'k':vsplay_startframe=atoi(optarg);   break;
+    case 'l':if(vsplay_verbose)
 		fprintf(stderr,"List file : %s\n",optarg);
 	       readlist(optarg);
 	       break;
@@ -274,7 +274,7 @@ int main(int argc,char *argv[])
 	  int a;
 
 	  sscanf(optarg,"%d",&a);
-	  splay_threadnum=a;
+	  vsplay_threadnum=a;
 	}
 	break;
 #endif
@@ -283,14 +283,14 @@ int main(int argc,char *argv[])
     }
   }
 
-  if(argc<=optind && splay_listsize==0)
+  if(argc<=optind && vsplay_listsize==0)
   {
     printf("%s %s"
 #ifdef PTHREADEDMPEG
 	   " with pthread"
 #endif
 	   "\n"
-	   "Usage : splay [-2mrsvMVWS] [-d device] [-l listfile] "
+	   "Usage : vsplay [-2mrsvMVWS] [-d device] [-l listfile] "
 #ifdef PTHREADEDMPEG
 	   "[-t number] "
 #endif
@@ -301,7 +301,7 @@ int main(int argc,char *argv[])
     return 0;
   }
 
-  if(splay_listsize==0)    // Make list by arguments
+  if(vsplay_listsize==0)    // Make list by arguments
     arglist(argc,argv,optind);
 
   // create the output device
@@ -318,9 +318,9 @@ int main(int argc,char *argv[])
 
   do
   {
-    if(splay_shuffleflag)shufflelist();
+    if(vsplay_shuffleflag)shufflelist();
 
-    for(int i=0;i<splay_listsize;i++){
+    for(int i=0;i<vsplay_listsize;i++){
       if (!single_threaded)
       { // normal mode
         signal(SIGINT,&mtest);
@@ -338,16 +338,16 @@ int main(int argc,char *argv[])
         else{
 	  //	cout << "child process " << getpid() << endl;
 	  signal(SIGINT,&mstop);
-	  play(splay_list[i], device);
+	  play(vsplay_list[i], device);
 	  exit(0);
         }
       }
       else
       { // single threaded mode
-	play(splay_list[i], device);
+	play(vsplay_list[i], device);
       }
     }
-  }while(splay_repeatflag);
+  }while(vsplay_repeatflag);
 
   delete device;
   

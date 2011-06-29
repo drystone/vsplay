@@ -15,26 +15,26 @@
 
 #include "mpegsound.h"
 
-#include "splay.h"
+#include "vsplay.h"
 
-int  splay_verbose=0;
-int splay_startframe=0;
-char *splay_progname;
-const char *splay_devicename=NULL;
+int  vsplay_verbose=0;
+int vsplay_startframe=0;
+char *vsplay_progname;
+const char *vsplay_devicename=NULL;
 
-char *splay_list[MAXLISTSIZE];
-int  splay_listsize=0;
-int  splay_downfrequency=0;
-bool splay_shuffleflag=false,
-     splay_repeatflag=false,
-     splay_forcetomonoflag=false,
-     splay_frameinfo=false;
+char *vsplay_list[MAXLISTSIZE];
+int  vsplay_listsize=0;
+int  vsplay_downfrequency=0;
+bool vsplay_shuffleflag=false,
+     vsplay_repeatflag=false,
+     vsplay_forcetomonoflag=false,
+     vsplay_frameinfo=false;
 
 #ifdef PTHREADEDMPEG
-int splay_threadnum=50;
+int vsplay_threadnum=50;
 #endif
 
-const char *splay_Sounderrors[SOUND_ERROR_UNKNOWN]=
+const char *vsplay_Sounderrors[SOUND_ERROR_UNKNOWN]=
 { "Failed to open sound device.",
   "Sound device is busy.",
   "Buffersize of sound device is wrong.",
@@ -76,21 +76,21 @@ void arglist(int argc,char *argv[],int start)
   register int i;
 
   argsflag=true;
-  for(i=start;(i<argc) && (splay_listsize<MAXLISTSIZE); i++)
-    splay_list[splay_listsize++]=argv[i];
+  for(i=start;(i<argc) && (vsplay_listsize<MAXLISTSIZE); i++)
+    vsplay_list[vsplay_listsize++]=argv[i];
 }
 
 void killlist(void)
 {
-  if(splay_listsize)
+  if(vsplay_listsize)
   {
     if(!argsflag)
     {
-      for(int i=0;i<splay_listsize;i++)free(splay_list[i]);
+      for(int i=0;i<vsplay_listsize;i++)free(vsplay_list[i]);
     }
     argsflag=false;
   }
-  splay_listsize=0;
+  vsplay_listsize=0;
 }
 
 void addlist(const char *path,const char *filename)
@@ -109,8 +109,8 @@ void addlist(const char *path,const char *filename)
     songfilename[p]=filename[i];
 
   songfilename[p]=0;
-  splay_list[splay_listsize]=strdup(songfilename);
-  splay_listsize++;
+  vsplay_list[vsplay_listsize]=strdup(songfilename);
+  vsplay_listsize++;
 }
 
 void readlist(char *filename)
@@ -131,12 +131,12 @@ void readlist(char *filename)
 
     if((fp=Soundinputstream::hopen(filename,&err))==NULL)
     {
-      fprintf(stderr,"%s: No list file found\n",splay_progname);
+      fprintf(stderr,"%s: No list file found\n",vsplay_progname);
       return;
     }
   }
 
-  for(splay_listsize=0;splay_listsize<MAXLISTSIZE;)
+  for(vsplay_listsize=0;vsplay_listsize<MAXLISTSIZE;)
   {
     c=fp->getbytedirect();
     if(c==EOF)break;
@@ -163,8 +163,8 @@ void readlist(char *filename)
 	  }
 
 	  songfile[++p]='\0';
-	  splay_list[splay_listsize]=strdup(songfile);
-	  splay_listsize++;
+	  vsplay_list[vsplay_listsize]=strdup(songfile);
+	  vsplay_listsize++;
 	  break;
 	}
 
@@ -172,10 +172,10 @@ void readlist(char *filename)
       }
   }
 
-  if(splay_verbose>1)
+  if(vsplay_verbose>1)
   {
-    for(int i=0;i<splay_listsize;i++)
-      fprintf(stderr,"%d : %s\n",i+1,splay_list[i]);
+    for(int i=0;i<vsplay_listsize;i++)
+      fprintf(stderr,"%d : %s\n",i+1,vsplay_list[i]);
   }
 
   delete fp;
@@ -189,14 +189,14 @@ void shufflelist(void)
 
   srandom(time(&t));
 
-  for(i=splay_listsize-1;i>0;i--)
+  for(i=vsplay_listsize-1;i>0;i--)
   {
     p=random()%(i+1);
 
     if(p==i)continue;
 
-    tmp=splay_list[p];
-    splay_list[p]=splay_list[i];
-    splay_list[i]=tmp;
+    tmp=vsplay_list[p];
+    vsplay_list[p]=vsplay_list[i];
+    vsplay_list[i]=tmp;
   }
 }

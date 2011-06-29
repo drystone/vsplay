@@ -7,23 +7,23 @@
 #define MAXLISTSIZE        1000     // Too many?
 #define MAXFILENAMELENGTH   300     // Too long?
 
-extern int  splay_verbose;
-extern int splay_startframe;
-extern char *splay_progname;
-extern const char *splay_devicename;
+extern int  vsplay_verbose;
+extern int vsplay_startframe;
+extern char *vsplay_progname;
+extern const char *vsplay_devicename;
 
-extern char *splay_list[MAXLISTSIZE];
-extern int  splay_listsize;
-extern int  splay_downfrequency;
-extern bool splay_shuffleflag,
-            splay_repeatflag,
-            splay_forcetomonoflag,
-            splay_frameinfo;
+extern char *vsplay_list[MAXLISTSIZE];
+extern int  vsplay_listsize;
+extern int  vsplay_downfrequency;
+extern bool vsplay_shuffleflag,
+            vsplay_repeatflag,
+            vsplay_forcetomonoflag,
+            vsplay_frameinfo;
 
-extern const char *splay_Sounderrors[];
+extern const char *vsplay_Sounderrors[];
 
 #ifdef PTHREADEDMPEG
-extern int  splay_threadnum;
+extern int  vsplay_threadnum;
 #endif
 
 /*****************/

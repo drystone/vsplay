@@ -520,6 +520,7 @@ bool Mpegtoraw::run(int frames)
     if(loader->eof())
     {
       seterrorcode(SOUND_ERROR_FINISH);
+      player->drain();
       break;
     }
     if(loadheader()==false)break;
