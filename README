@@ -1,23 +1,14 @@
-This program have NO WARRANTY.
-You can use this program under GPL.
-You can use these libraries under Library GPL.
+vsplay - a command line mp3 player
 
-This is a library to play mpeg files, and a program using the library.
-The program splay can play normal files and http:// URI:s.
+vsplay is a descendent of splay by by Woo-jae Jung
+which in turn was based on maplay.
 
-Current version have
-	* Support MPEG-1 layer 1,2 and 3
-	* Support MPEG-2 layer 3 (I don't know how to work in other layers)
-	* Support 'force to mono'
-	* Support half frequency in MPEG-Audio
-	* Support list file
-	* Support http:// in filename and list file
-	* Support buffer (Thread)
-	* Support selecting frame (X-interface)
-	* Support description of MPEG-Audio
+This software comes with NO WARRANTY.
 
-To install, See INSTALL
+You can use this program under GPLv2.
+You can use these libraries under LGPLv2.
 
-Bug report
-  Mikael.Hedin@irf.se
+Please report any bugs to <john@drystone.co.uk>
 
+Copyright (c) 1997 Woo-jae Jung
+Copyright (c) 2011 John Hedges

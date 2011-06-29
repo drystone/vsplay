@@ -1,3 +1,15 @@
+2011-06-29  John Hedges <john@drystone.co.uk>
+
+	* Release vsplay 1.0
+
+	* splay is dead - long live splay
+
+	* Project renamed to vsplay
+
+	* xsplay retired - RIP
+
+	* Some refactoring (especially added Bitstream)
+
 2005-05-01	John Hedges	<jayache@sourceforge.net>
 
 	* Release 0.9.6.1
