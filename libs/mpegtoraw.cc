@@ -20,7 +20,6 @@
 #include <iostream>
 
 #include "mpegsound.h"
-#include "mpegsound_locals.h"
 
 #define MY_PI 3.14159265358979323846
 
@@ -41,57 +40,7 @@ Mpegtoraw::~Mpegtoraw()
 {
   if(frameoffsets)delete [] frameoffsets;
 }
-/*
-#ifndef WORDS_BIGENDIAN
-#define _KEY 0
-#else
-#define _KEY 3
-#endif
 
-int Mpegtoraw::getbits(int bits)
-{
-  union
-  {
-    char store[4];
-    int current;
-  }u;
-  int bi;
-
-  if(!bits)return 0;
-
-  u.current=0;
-  bi=(bitindex&7);
-  u.store[_KEY]=buffer[bitindex>>3]<<bi;
-  bi=8-bi;
-  bitindex+=bi;
-
-  while(bits)
-  {
-    if(!bi)
-    {
-      u.store[_KEY]=buffer[bitindex>>3];
-      bitindex+=8;
-      bi=8;
-    }
-
-    if(bits>=bi)
-    {
-      u.current<<=bi;
-      bits-=bi;
-      bi=0;
-    }
-    else
-    {
-      u.current<<=bits;
-      bi-=bits;
-      bits=0;
-    }
-  }
-  bitindex-=bi;
-
-  return (u.current>>8);
-}
-*/
 void Mpegtoraw::setforcetomono(bool flag)
 {
   forcetomonoflag=flag;

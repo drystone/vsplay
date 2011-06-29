@@ -19,7 +19,6 @@
 #include <stdlib.h>
 
 #include "mpegsound.h"
-#include "mpegsound_locals.h"
 
 #define MUL3(a) (((a)<<1)+(a))
 
@@ -1621,7 +1620,7 @@ void Mpegtoraw::extractlayer3(void)
     else
     {
       for(register int i=layer3slots;i>0;i--)  // read main data.
-	bitwindow.putbyte(bitstream.getbits8());
+	bitwindow.putbyte(bitstream.getbits(8));
     }
 
     main_data_end=bitwindow.gettotalbit()>>3;// of previous frame
@@ -1732,7 +1731,7 @@ void Mpegtoraw::extractlayer3_2(void)
     else
     {
       for(register int i=layer3slots;i>0;i--)  // read main data.
-	bitwindow.putbyte(bitstream.getbits8());
+	bitwindow.putbyte(bitstream.getbits(8));
     }
     bitwindow.wrap();
 

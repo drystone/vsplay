@@ -375,9 +375,6 @@ public:
     bitoffset = (bits + bitoffset) & 7;
     return a >> (8-bitoffset);
   };
-  unsigned int getbits8() {
-    return (*pbits << bitoffset) | (*++pbits & (0xff >> 8-bitoffset));
-  };
   unsigned int getbit() {
     if (++bitoffset == 8) {
       bitoffset = 0;
