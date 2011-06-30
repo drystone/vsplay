@@ -21,6 +21,7 @@ using namespace std;
 // File player superclass
 Fileplayer::Fileplayer(Soundplayer * player)
     : player(player)
+    , _abort_flag(false)
 {
   __errorcode=SOUND_ERROR_OK;
 };
@@ -103,7 +104,11 @@ bool Mpegfileplayer::playing(int verbose, bool frameinfo, int startframe)
   }
 
   // Playing
-  while (server->run(100)) {
+  while (server->run(10)) {
+    if (_abort_flag) {
+      player->abort();
+      break;
+    }
     if(frameinfo) {
       int currframe=server-> getcurrentframe();
       double currtime=1.0*currframe*pcmperframe/frequency;
@@ -122,44 +127,13 @@ bool Mpegfileplayer::playing(int verbose, bool frameinfo, int startframe)
 bool Mpegfileplayer::playingwiththread(int verbose,bool frameinfo,
 				       int framenumbers, int startframe)
 {
-  if(framenumbers<20)return playing(verbose,frameinfo,startframe);
-
-  server->makethreadedplayer(framenumbers);
-
-  if(!server->run(-1))
-  {       // Initialize MPEG Layer 3
-      seterrorcode(server->geterrorcode());
-      return false;
-  }
-  if(verbose>0)showverbose(verbose);
-
-  if (startframe) server->setframe(startframe);
-
-  int pcmperframe=server->getpcmperframe();
-  int frequency=server->getfrequency();
-  int totframes=server->gettotalframe();
-  double tottime=1.0*totframes*pcmperframe/frequency;
-  if(frameinfo) {
-    cout << "Totalframes " <<  totframes;
-    cout << "; Totaltime " << tominsec(tottime)  << endl;
-  }
-
-  // Playing
-  while(server->run(100)) {
-    if(frameinfo) {
-      int currframe=server-> getcurrentframe();
-      double currtime=1.0*currframe*pcmperframe/frequency;
-      cout << "Frame " << currframe << " [" << totframes-currframe << "]; ";
-      cout << "Time " << tominsec(currtime) << " [" ;
-      cout << tominsec(tottime-currtime) << "]" << endl ;
-    }
-  }
-
+  if(framenumbers >= 20)
+    server->makethreadedplayer(framenumbers);
+  
+  bool ret = playing(verbose, frameinfo, startframe);
   server->freethreadedplayer();
   
-  seterrorcode(server->geterrorcode());
-  if(seterrorcode(SOUND_ERROR_FINISH))return true;
-  return false;
+  return ret;
 }
 #endif
 

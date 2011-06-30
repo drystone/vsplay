@@ -61,9 +61,10 @@ Rawplayeralsa::initialize(const char* filename)
 bool 
 Rawplayeralsa::setsoundtype(int stereo,int samplesize,int speed)
 {
-    int alsa_error;
+    int alsa_error = 0;
     snd_pcm_format_t format = (samplesize == 16) ? SND_PCM_FORMAT_S16_LE : SND_PCM_FORMAT_UNKNOWN;
     _channels = stereo ? 2 : 1;
+
     alsa_error = snd_pcm_hw_params_set_access(_device_handle, _hw_params, SND_PCM_ACCESS_RW_INTERLEAVED);
     if (!alsa_error) alsa_error = snd_pcm_hw_params_set_channels(_device_handle, _hw_params, _channels);
     if (!alsa_error) alsa_error = snd_pcm_hw_params_set_format(_device_handle, _hw_params, format);
@@ -84,24 +85,29 @@ Rawplayeralsa::putblock(void *buffer, int size)
     
     while (remaining)
     {
-        snd_pcm_wait(_device_handle, 1000);
-        int result = snd_pcm_writei(_device_handle, buf, remaining);
-        if (result == -EAGAIN)
-        {   // write won't fit - buffer must be full
-            continue;
-        }
-        else if (result == -EPIPE)
-        {   // underrun
-            snd_pcm_recover(_device_handle, result, 1);
-            continue;
+        int result = snd_pcm_wait(_device_handle, 100);
+        
+        if (result == 1)
+            result = snd_pcm_writei(_device_handle, buf, remaining);
+
+        if (result > 0)
+        {
+            remaining -= result;
+            buf += result * framesize;
         }
         else if (result < 0)
         {
-            error = true;
-            break;
+            if (result == -EPIPE)
+            {   // underrun
+                snd_pcm_recover(_device_handle, result, 1);
+                continue;
+            }
+            else
+            {
+                error = true;
+                break;
+            }
         }
-        remaining -= result;
-        buf += result * framesize;
     }
     return !error;
 }
@@ -109,7 +115,7 @@ Rawplayeralsa::putblock(void *buffer, int size)
 void
 Rawplayeralsa::abort(void)
 {
-    snd_pcm_reset(_device_handle);
+    snd_pcm_drop(_device_handle);
 }
 
 #endif // ALSA

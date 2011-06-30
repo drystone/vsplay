@@ -55,6 +55,7 @@ static const char *help=
 
 typedef enum {devicetype_oss, devicetype_alsa} Devicetype;
 bool single_threaded = false;
+Mpegfileplayer * g_player = NULL;
 
 /***********************/
 /* Command line player */
@@ -150,14 +151,16 @@ static void play(char *filename, Soundplayer* device)
 #endif /* HAVE_LIBID3 */        
     }
   
-  Mpegfileplayer player(device);
-  if(!player.openfile(strcmp(filename,"-")==0?NULL:filename))
-    {
-      error(player.geterrorcode());
-      return;
-    }
-  player.setdownfrequency(vsplay_downfrequency);
-  playing(&player);
+  g_player = new Mpegfileplayer(device);
+  if(!g_player->openfile(strcmp(filename,"-")==0?NULL:filename))
+      error(g_player->geterrorcode());
+  else
+  {
+      g_player->setdownfrequency(vsplay_downfrequency);
+      playing(g_player);
+  }
+  delete g_player;
+  g_player = NULL;
 }
 
 #include <signal.h>
@@ -167,10 +170,17 @@ void mtest(int)
   //  cerr << "mtest got nr " << i << endl;
 }
 
-void mstop(int)
+void mterm(int)
 {
   //  cerr << "mstop got nr " << i << endl;
   exit(1);
+}
+
+void mstop(int)
+{
+  // TODO possible problem here if g_player is being deleted
+  if (g_player)
+    g_player->abort();
 }
 
 Soundplayer * open_device(const char * devicename, Devicetype devicetype) throw (int)
@@ -329,7 +339,7 @@ int main(int argc,char *argv[])
   	  //	cout << "parent process " << pid << endl;
 	  int a;
 	  wait(&a);
-	  signal(SIGINT,&mstop);
+	  signal(SIGINT,&mterm);
 	  //	cerr << "stoppable "<<endl;
 	  usleep (500*1000);
 	  //	cerr << "not stoppable "<<endl;
