@@ -659,10 +659,12 @@ public:
 #ifdef PTHREADEDMPEG
   virtual bool playingwiththread(int verbose,bool frameinfo,int framenumbers, int startframe) =0;
 #endif
+  void abort() { _abort_flag = true; }
 
 protected:
   bool seterrorcode(int errorno){__errorcode=errorno;return false;};
   Soundplayer *player;
+  bool _abort_flag;
 
 private:
   int __errorcode;

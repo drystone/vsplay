@@ -103,7 +103,12 @@ bool Mpegfileplayer::playing(int verbose, bool frameinfo, int startframe)
   }
 
   // Playing
-  while (server->run(100)) {
+  while (server->run(10)) {
+    if (_abort_flag) {
+      player->abort();
+      break;
+    }
+  
     if(frameinfo) {
       int currframe=server-> getcurrentframe();
       double currtime=1.0*currframe*pcmperframe/frequency;
@@ -145,7 +150,12 @@ bool Mpegfileplayer::playingwiththread(int verbose,bool frameinfo,
   }
 
   // Playing
-  while(server->run(100)) {
+  while (server->run(10)) {
+    if (_abort_flag) {
+      player->abort();
+      break;
+    }
+  
     if(frameinfo) {
       int currframe=server-> getcurrentframe();
       double currtime=1.0*currframe*pcmperframe/frequency;
