@@ -22,6 +22,7 @@ using namespace std;
 // File player superclass
 Fileplayer::Fileplayer(Soundplayer * player)
     : player(player)
+    , _abort_flag(false)
 {
   __errorcode=SOUND_ERROR_OK;
 };

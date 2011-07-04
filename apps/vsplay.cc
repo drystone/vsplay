@@ -171,6 +171,13 @@ void sigint_abort(int)
     g_player->abort();
 }
 
+void mstop(int)
+{
+  // TODO possible problem here if g_player is being deleted
+  if (g_player)
+    g_player->abort();
+}
+
 Soundplayer * open_device(const char * devicename, Devicetype devicetype) throw (int)
 {
   Soundplayer * device = NULL;
