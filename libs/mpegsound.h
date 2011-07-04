@@ -317,7 +317,8 @@ public:
 private:
   snd_pcm_t *_device_handle;
   snd_pcm_hw_params_t *_hw_params;
-  unsigned int _channels;
+  unsigned int _framesize;
+  bool _abort_flag;
 };
 #endif // ALSA
 

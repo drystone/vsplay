@@ -32,90 +32,104 @@
 
 #include "mpegsound.h"
 
+class Alsa_error {
+public:
+    int errnum;
+    Alsa_error(int e) : errnum(e) {};
+};
+
+inline int alsa_throw(int result) throw(Alsa_error) {
+    if (result < 0) throw Alsa_error(result);
+    return result;
+}
+
 Rawplayeralsa::Rawplayeralsa()
       : _device_handle(0)
       , _hw_params(0)
+      , _abort_flag(false)
 {
 }
   
 Rawplayeralsa::~Rawplayeralsa()
 {
     if (_device_handle) snd_pcm_close(_device_handle);
-    snd_pcm_hw_params_free(_hw_params);
+    if (_hw_params) snd_pcm_hw_params_free(_hw_params);
 }
 
 bool
 Rawplayeralsa::initialize(const char* filename)
 {
-    int alsa_error;
-    
-    // allocate the hw_params structure, open the alsa device and get its capabilities
-    alsa_error = snd_pcm_hw_params_malloc(&_hw_params);
-    if (!alsa_error) alsa_error = snd_pcm_open(&_device_handle, filename, SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK);
-    if (!alsa_error) alsa_error = snd_pcm_hw_params_any(_device_handle, _hw_params);
-    if (alsa_error) return seterrorcode(SOUND_ERROR_DEVOPENFAIL);
-
-    return true;
+    try
+    {
+        // allocate the hw_params structure, open the alsa device and get its capabilities
+        alsa_throw(snd_pcm_hw_params_malloc(&_hw_params));
+        alsa_throw(snd_pcm_open(&_device_handle, filename, SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK));
+        alsa_throw(snd_pcm_hw_params_any(_device_handle, _hw_params));
+        return true;
+    }
+    catch (Alsa_error &e)
+    {
+        return seterrorcode(SOUND_ERROR_DEVOPENFAIL);
+    }
 }
 
 bool 
 Rawplayeralsa::setsoundtype(int stereo,int samplesize,int speed)
 {
-    int alsa_error = 0;
     snd_pcm_format_t format = (samplesize == 16) ? SND_PCM_FORMAT_S16_LE : SND_PCM_FORMAT_UNKNOWN;
-    _channels = stereo ? 2 : 1;
+    int channels = stereo ? 2 : 1;
 
-    alsa_error = snd_pcm_hw_params_set_access(_device_handle, _hw_params, SND_PCM_ACCESS_RW_INTERLEAVED);
-    if (!alsa_error) alsa_error = snd_pcm_hw_params_set_channels(_device_handle, _hw_params, _channels);
-    if (!alsa_error) alsa_error = snd_pcm_hw_params_set_format(_device_handle, _hw_params, format);
-    if (!alsa_error) alsa_error = snd_pcm_hw_params_set_rate(_device_handle, _hw_params, speed, 0);
-    if (!alsa_error) alsa_error = snd_pcm_hw_params(_device_handle, _hw_params);
-    if (!alsa_error) alsa_error = snd_pcm_prepare(_device_handle);
-    if (alsa_error) seterrorcode(SOUND_ERROR_DEVCTRLERROR);
-    return (alsa_error == 0) ? true : false;
+    _framesize = channels << 1;
+    try
+    {
+        alsa_throw(snd_pcm_hw_params_set_access(_device_handle, _hw_params, SND_PCM_ACCESS_RW_INTERLEAVED));
+        alsa_throw(snd_pcm_hw_params_set_channels(_device_handle, _hw_params, channels));
+        alsa_throw(snd_pcm_hw_params_set_format(_device_handle, _hw_params, format));
+        alsa_throw(snd_pcm_hw_params_set_rate(_device_handle, _hw_params, speed, 0));
+        alsa_throw(snd_pcm_hw_params(_device_handle, _hw_params));
+        alsa_throw(snd_pcm_prepare(_device_handle));
+        return true;
+    }
+    catch (Alsa_error &e)
+    {
+        return seterrorcode(SOUND_ERROR_DEVCTRLERROR);
+    }
 }
 
 bool
 Rawplayeralsa::putblock(void *buffer, int size)
 {
-    bool error = false;
-    unsigned int framesize = (_channels == 2 ? 4 : 2);
-    int remaining = size/framesize;
-    char *buf = (char*)buffer;
-    
-    while (remaining)
+    snd_pcm_uframes_t frames = size / _framesize;
+    while (frames && !_abort_flag)
     {
-        int result = snd_pcm_wait(_device_handle, 100);
-        
-        if (result == 1)
-            result = snd_pcm_writei(_device_handle, buf, remaining);
-
-        if (result > 0)
-        {
-            remaining -= result;
-            buf += result * framesize;
-        }
-        else if (result < 0)
-        {
-            if (result == -EPIPE)
-            {   // underrun
-                snd_pcm_recover(_device_handle, result, 1);
-                continue;
-            }
-            else
+        try {
+            if (alsa_throw(snd_pcm_wait(_device_handle, 100)))
             {
-                error = true;
-                break;
+                void * pdata = (char*)buffer + size - frames * _framesize;
+                frames -= alsa_throw(snd_pcm_writei(_device_handle, pdata, frames));
             }
+        }
+        catch (Alsa_error &e)
+        {
+            switch (e.errnum)
+            {
+            case -EPIPE:
+                if (snd_pcm_recover(_device_handle, -EPIPE, 1) < 0)
+                    return false;
+                break;
+            otherwise:
+                return false;
+            };
         }
     }
-    return !error;
+    return true;
 }
 
 void
 Rawplayeralsa::abort(void)
 {
     snd_pcm_drop(_device_handle);
+    _abort_flag = true;
 }
 
 #endif // ALSA

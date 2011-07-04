@@ -16,6 +16,7 @@ using namespace std;
 #include <iostream.h>
 #endif
 
+#include <math.h>
 #include "mpegsound.h"
 
 // File player superclass
@@ -72,7 +73,6 @@ void Mpegfileplayer::setdownfrequency(int value)
   server->setdownfrequency(value);
 };
 
-#include <math.h>
 char * tominsec(double s)
 {
   int min=int(floor(s/60));
@@ -103,8 +103,10 @@ bool Mpegfileplayer::playing(int verbose, bool frameinfo, int startframe)
   }
 
   // Playing
-  while (server->run(10)) {
-    if (_abort_flag) {
+  while (server->run(1)) {
+    if (_abort_flag)
+    {
+      server->stopthreadedplayer();
       player->abort();
       break;
     }
@@ -127,49 +129,13 @@ bool Mpegfileplayer::playing(int verbose, bool frameinfo, int startframe)
 bool Mpegfileplayer::playingwiththread(int verbose,bool frameinfo,
 				       int framenumbers, int startframe)
 {
-  if(framenumbers<20)return playing(verbose,frameinfo,startframe);
+  if (framenumbers < 20)
+    return playing(verbose, frameinfo, startframe);
 
   server->makethreadedplayer(framenumbers);
-
-  if(!server->run(-1))
-  {       // Initialize MPEG Layer 3
-      seterrorcode(server->geterrorcode());
-      return false;
-  }
-  if(verbose>0)showverbose(verbose);
-
-  if (startframe) server->setframe(startframe);
-
-  int pcmperframe=server->getpcmperframe();
-  int frequency=server->getfrequency();
-  int totframes=server->gettotalframe();
-  double tottime=1.0*totframes*pcmperframe/frequency;
-  if(frameinfo) {
-    cout << "Totalframes " <<  totframes;
-    cout << "; Totaltime " << tominsec(tottime)  << endl;
-  }
-
-  // Playing
-  while (server->run(10)) {
-    if (_abort_flag) {
-      player->abort();
-      break;
-    }
-  
-    if(frameinfo) {
-      int currframe=server-> getcurrentframe();
-      double currtime=1.0*currframe*pcmperframe/frequency;
-      cout << "Frame " << currframe << " [" << totframes-currframe << "]; ";
-      cout << "Time " << tominsec(currtime) << " [" ;
-      cout << tominsec(tottime-currtime) << "]" << endl ;
-    }
-  }
-
+  bool ret = playing(verbose, frameinfo, startframe);
   server->freethreadedplayer();
-  
-  seterrorcode(server->geterrorcode());
-  if(seterrorcode(SOUND_ERROR_FINISH))return true;
-  return false;
+  return ret;
 }
 #endif
 

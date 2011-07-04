@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include <signal.h>
 
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -163,20 +164,7 @@ static void play(char *filename, Soundplayer* device)
   g_player = NULL;
 }
 
-#include <signal.h>
-
-void mtest(int)
-{
-  //  cerr << "mtest got nr " << i << endl;
-}
-
-void mterm(int)
-{
-  //  cerr << "mstop got nr " << i << endl;
-  exit(1);
-}
-
-void mstop(int)
+void sigint_abort(int)
 {
   // TODO possible problem here if g_player is being deleted
   if (g_player)
@@ -333,21 +321,16 @@ int main(int argc,char *argv[])
     for(int i=0;i<vsplay_listsize;i++){
       if (!single_threaded)
       { // normal mode
-        signal(SIGINT,&mtest);
-        if ( fork() ) {
-  	  //	pid_t pid=getpid();
-  	  //	cout << "parent process " << pid << endl;
-	  int a;
-	  wait(&a);
-	  signal(SIGINT,&mterm);
-	  //	cerr << "stoppable "<<endl;
+        if ( fork() )
+        {
+          signal(SIGINT, SIG_IGN);
+	  wait(NULL);
+          signal(SIGINT, SIG_DFL);
 	  usleep (500*1000);
-	  //	cerr << "not stoppable "<<endl;
-	  signal(SIGINT,&mtest);
         }
-        else{
-	  //	cout << "child process " << getpid() << endl;
-	  signal(SIGINT,&mstop);
+        else
+        {
+	  signal(SIGINT, sigint_abort);
 	  play(vsplay_list[i], device);
 	  exit(0);
         }
