@@ -20,9 +20,6 @@ AC_CHECK_LIB([tag], [main], [AC_CHECK_HEADERS([taglib/tag.h],
     [LIBTAG=1]
 	[LIBS="$LIBS -ltag"]
 )])
-if test "$LIBTAG" != "1"; then
-    AC_CHECK_LIB(id3, ID3Tag_New)
-fi
 AC_CHECK_LIB(m, cos)
 AC_CHECK_LIB(pthread,main,INCLUDEPTHREAD=1)
 AC_CHECK_LIB([asound], [snd_seq_create_simple_port], [WITH_ALSA=1])

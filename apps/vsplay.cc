@@ -18,14 +18,10 @@
 
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/time.h>
 #include <iostream>
 #include <iomanip>
 using namespace std;
-
-#ifdef HAVE_LIBID3
-#include <id3/tag.h>
-#include <id3/misc_support.h>
-#endif /* HAVE_LIBID3 */
 
 #ifdef TAGLIB
 #include <taglib/tag.h>
@@ -104,53 +100,17 @@ ostream& operator<<(ostream& s, const TagLib::Tag& tag )
 }
 #endif /* TAGLIB */
 
-#ifdef HAVE_LIBID3
-//Wrapper to convert null-string to the empty string
-inline const char * nn(const char* str)
-{
-  return str?str:"";
-}
-
-ostream& operator<<(ostream& s, const ID3_Tag* tag )
-{
-  // Print just what we want...
-  s.setf(ios::left);  // The filled fields get the text to the left
-  s << 
-    "Title : " << nn(ID3_GetTitle(tag)) << endl;
-  s << 
-    "Artist: " << setw(30) << nn(ID3_GetArtist(tag)) << 
-    "Album: " << nn(ID3_GetAlbum(tag)) << 
-    endl ; 
-  
-  s << 
-    "Genre : " << setw(18) << nn(ID3_GetGenre(tag)) << 
-    "Track: " << setw(5) << ID3_GetTrackNum(tag) << 
-    "Year: " <<  setw(6) << nn(ID3_GetYear(tag)); 
-//   if ( ID3_GetComment(tag) ){
-//     s << endl << "Comment:" << nn(ID3_GetComment(tag)) <<
-//       nn(ID3_GetLyricist(tag)) << nn(ID3_GetLyrics(tag));
-//   } 
-
-  return s;
-}
-#endif /* HAVE_LIBID3 */
-
 static void play(char *filename, Soundplayer* device)
 {
   if( vsplay_verbose-- )
     cout << filename << ":" << endl;
 
+#ifdef TAGLIB
   if( vsplay_verbose>0 && strcmp(filename, "-") != 0) // cant do ID3 stuff on stdin
     {
-#ifdef TAGLIB
       cout << *TagLib::MPEG::File(filename).tag();
-#endif /* TAGLIB */        
-#ifdef HAVE_LIBID3
-	  ID3_Tag mytag(filename);
-	  if ( mytag.HasV1Tag() || mytag.HasV2Tag()  )
-	    cout << &mytag << endl;
-#endif /* HAVE_LIBID3 */        
     }
+#endif /* TAGLIB */        
   
   g_player = new Mpegfileplayer(device);
   if(!g_player->openfile(strcmp(filename,"-")==0?NULL:filename))
@@ -171,11 +131,22 @@ void sigint_abort(int)
     g_player->abort();
 }
 
-void mstop(int)
+void sigint_capture(int)
 {
-  // TODO possible problem here if g_player is being deleted
-  if (g_player)
-    g_player->abort();
+  static struct timeval last = {0, 0};
+
+  struct timeval now;
+  gettimeofday(&now, NULL);
+
+  if (last.tv_sec)
+  {
+    long diff = (now.tv_sec - last.tv_sec) * 1000 
+              + (now.tv_usec - last.tv_usec) / 1000;
+    if (diff < 250)
+      exit(0);
+  }
+  last.tv_sec = now.tv_sec;
+  last.tv_usec = now.tv_usec;
 }
 
 Soundplayer * open_device(const char * devicename, Devicetype devicetype) throw (int)
@@ -330,16 +301,14 @@ int main(int argc,char *argv[])
       { // normal mode
         if ( fork() )
         {
-          signal(SIGINT, SIG_IGN);
-	  wait(NULL);
-          signal(SIGINT, SIG_DFL);
-	  usleep (500*1000);
+          signal(SIGINT, sigint_capture);
+          wait(NULL);
         }
         else
         {
-	  signal(SIGINT, sigint_abort);
-	  play(vsplay_list[i], device);
-	  exit(0);
+          signal(SIGINT, sigint_abort);
+          play(vsplay_list[i], device);
+          exit(0);
         }
       }
       else
