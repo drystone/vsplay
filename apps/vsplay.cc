@@ -15,13 +15,17 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <libgen.h>
 
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/time.h>
+#include <sys/param.h>
 #include <iostream>
+#include <fstream>
 #include <iomanip>
-using namespace std;
+#include <algorithm>
+#include <string>
 
 #ifdef TAGLIB
 #include <taglib/tag.h>
@@ -32,103 +36,105 @@ using namespace std;
 
 #include "vsplay.h"
 
-static const char *help=
-"\t-2 : playing with half frequency.\n"
-"\t-e : exit when playing is done. (only XSPLAY)\n"
-"\t-f : display frame and time info (played and remaining).\n"
-"\t-m : force to mono.\n"
-"\t-r : repeat forever.\n"
-"\t-s : shuffle play.\n"
-"\t-v : verbose, Very verbose, Very very verbose.\n"
-"\t-M : playing MPEG-Audio file as standard input.\n"
-"\t-V : display version.\n"
-"\n"
-"\t-k num : start playing at frame num.\n"
-"\t-d dev  : Set dev as device or file.\n"
-"\t-l list : list file.\n"
-"\t-t buf  : Set number of buffer. (default : 50)\n"
-"\n"
-"For detail, see man pages.\n";
+char progname[MAXPATHLEN];
+int  verbose;
+
+std::vector<std::string> playlist;
+
+const char *vsplay_Sounderrors[SOUND_ERROR_UNKNOWN]=
+{ "Failed to open sound device.",
+  "Sound device is busy.",
+  "Buffersize of sound device is wrong.",
+  "Sound device control error.",
+
+  "Failed to open file for reading.",    // 5
+  "Failed to read file.",                
+
+  "Unkown proxy.",
+  "Unkown host.",
+  "Socket error.",
+  "Connection failed.",                  // 10
+  "Fdopen error.",
+  "Http request failed.",
+  "Http write failed.",
+  "Too many relocation",
+
+  "Memory is not enough.",               // 15
+  "Unexpected EOF.",
+  "Bad sound file format.",
+
+  "Cannot make thread.",
+
+  "Unknown error.",
+};
+
+void usage()
+{
+  std::cout << "Usage: " << progname 
+    << " [-2fmrsvMVW] [-d device] [-l listfile] [-k frame] files ..." << std::endl
+    << std::endl
+    << std::setw(12) << std::left << "\t-2" << "half frequency" << std::endl
+    << std::setw(12) << std::left << "\t-f" << "show frame and time info" << std::endl
+    << std::setw(12) << std::left << "\t-m" << "mono" << std::endl
+    << std::setw(12) << std::left << "\t-r" << "repeat" << std::endl
+    << std::setw(12) << std::left << "\t-s" << "shuffle" << std::endl
+    << std::setw(12) << std::left << "\t-v[v[v]]" << "verbose, verboser, verbosest" << std::endl
+    << std::setw(12) << std::left << "\t-M" << "play standard input" << std::endl
+    << std::setw(12) << std::left << "\t-V" << "show version and exit" << std::endl
+    << std::setw(12) << std::left << "\t-k <num>" << "playing from frame <num>" << std::endl
+    << std::setw(12) << std::left << "\t-d <dev>" << "use audio device <dev>" << std::endl
+    << std::setw(12) << std::left << "\t-l" << "list list file" << std::endl
+    << std::endl
+    << "For more detail, see man page." << std::endl;
+}
 
 typedef enum {devicetype_oss, devicetype_alsa} Devicetype;
 bool single_threaded = false;
-Mpegfileplayer * g_player = NULL;
+Mpegfileplayer g_player;
 
 /***********************/
 /* Command line player */
 /***********************/
-inline void error(int n)
+void error(int n)
 {
-  cerr << vsplay_progname << " " << vsplay_Sounderrors[n-1] << endl;
-}
-
-static void playing(Fileplayer *player)
-{
-  if(player->geterrorcode()>0)error(player->geterrorcode());
-  else
-  {
-    player->setforcetomono(vsplay_forcetomonoflag);
-#ifdef PTHREADEDMPEG
-    if (!single_threaded)
-    {
-      player->playingwiththread(vsplay_verbose-1,vsplay_frameinfo,
-  			        vsplay_threadnum, vsplay_startframe); 
-    }
-    else
-    {
-      player->playing(vsplay_verbose-1,vsplay_frameinfo,vsplay_startframe);
-    }
-#else
-    player->playing(vsplay_verbose-1,vsplay_frameinfo,vsplay_startframe);
-#endif  // PTHREADEDMPEG
-    if(player->geterrorcode()>0)error(player->geterrorcode());
-  }
+  std::cerr << progname << " " << vsplay_Sounderrors[n-1] << std::endl;
 }
 
 #ifdef TAGLIB
-ostream& operator<<(ostream& s, const TagLib::Tag& tag )
+std::ostream& operator<<(std::ostream& s, const TagLib::Tag& tag )
 {
-  s.setf(ios::left);
-  s << "Title : " << tag.title() << endl
-    << "Artist: " << setw(30) << tag.artist()
-    << "Album: " << tag.album() << endl
-    << "Genre : " << setw(18) << tag.genre()
-    << "Track: " << setw(5) << tag.track()
-    << "Year: " <<  setw(6) << tag.year()
-    << endl << flush; 
+  s.setf(std::ios::left);
+  s << "Title : " << tag.title() << std::endl
+    << "Artist: " << std::setw(30) << tag.artist()
+    << "Album: " << tag.album() << std::endl
+    << "Genre : " << std::setw(18) << tag.genre()
+    << "Track: " << std::setw(5) << tag.track()
+    << "Year: " <<  std::setw(6) << tag.year()
+    << std::endl << std::flush; 
   return s;
 }
 #endif /* TAGLIB */
 
-static void play(char *filename, Soundplayer* device)
+static void play(const std::string& filename, Soundplayer* device, unsigned int startframe, bool frameinfo)
 {
-  if( vsplay_verbose-- )
-    cout << filename << ":" << endl;
+  if( verbose-- )
+    std::cout << filename << ":" << std::endl;
 
 #ifdef TAGLIB
-  if( vsplay_verbose>0 && strcmp(filename, "-") != 0) // cant do ID3 stuff on stdin
-    {
-      cout << *TagLib::MPEG::File(filename).tag();
-    }
+  if( verbose>0 && filename != "-") // cant do ID3 stuff on stdin
+  {
+    std::cout << *TagLib::MPEG::File(filename.c_str()).tag();
+  }
 #endif /* TAGLIB */        
   
-  g_player = new Mpegfileplayer(device);
-  if(!g_player->openfile(strcmp(filename,"-")==0?NULL:filename))
-      error(g_player->geterrorcode());
+  if(!g_player.openfile(filename.c_str()))
+    error(g_player.geterrorcode());
   else
   {
-      g_player->setdownfrequency(vsplay_downfrequency);
-      playing(g_player);
+    g_player.playing(verbose - 1, frameinfo, startframe);
+    if (g_player.geterrorcode() > 0)
+      error(g_player.geterrorcode());
   }
-  delete g_player;
-  g_player = NULL;
-}
-
-void sigint_abort(int)
-{
-  // TODO possible problem here if g_player is being deleted
-  if (g_player)
-    g_player->abort();
 }
 
 void sigint_capture(int)
@@ -147,6 +153,19 @@ void sigint_capture(int)
   }
   last.tv_sec = now.tv_sec;
   last.tv_usec = now.tv_usec;
+
+  g_player.abort();
+}
+
+void readlist(std::istream& s)
+{
+  char * linebuf = new char[0x10000];
+  while (!s.eof())
+  {
+    s.getline(linebuf, 0x10000);
+    playlist.push_back(std::string(linebuf));
+  }
+  delete linebuf;
 }
 
 Soundplayer * open_device(const char * devicename, Devicetype devicetype) throw (int)
@@ -208,77 +227,89 @@ Soundplayer * open_device(const char * devicename, Devicetype devicetype) throw 
       
 int main(int argc,char *argv[])
 {
-  int c;
   Devicetype devicetype = devicetype_alsa;
   char const * devicename = NULL;
+  char const * list_file = NULL;
   bool stdin_only = false;
+  unsigned int startframe = 0;
+  bool shuffle = false;
+  bool repeat = false;
+  bool frameinfo = false;
 
-  vsplay_progname=argv[0];
+  strcpy(progname, basename(argv[0]));
 
-  while((c=getopt(argc,argv,
-		  "VM2mfrsvd:k:l:S"
-#ifdef PTHREADEDMPEG
-		  "t:"
-#endif
-		  ))>=0)
+  opterr = 0;
+  while (1)
   {
-    switch(c)
-    {
-      case 'V':printf("%s %s"
-#ifdef PTHREADEDMPEG
-		      " with pthread"
-#endif
-		      "\n",PACKAGE,VERSION);
-               return 0;
-    case 'M':stdin_only           =true;break;
-    case '2':vsplay_downfrequency  =   1;break;
-    case 'f':vsplay_frameinfo      =true;break;
-    case 'm':vsplay_forcetomonoflag=true;break;
-    case 'r':vsplay_repeatflag     =true;break;
-    case 's':vsplay_shuffleflag    =true;break;
-    case 'v':vsplay_verbose++;           break;
-      
-    case 'd':devicename=optarg;   break;
-    case 'k':vsplay_startframe=atoi(optarg);   break;
-    case 'l':if(vsplay_verbose)
-		fprintf(stderr,"List file : %s\n",optarg);
-	       readlist(optarg);
-	       break;
-#ifdef PTHREADEDMPEG
-      case 't':
-	{
-	  int a;
+    int c = getopt(argc, argv, "VM2mfrsvd:k:l:");
+    if (c == -1)
+      break;
 
-	  sscanf(optarg,"%d",&a);
-	  vsplay_threadnum=a;
-	}
-	break;
-#endif
-    case 'S':single_threaded = true; break;
-    default:fprintf(stderr,"Bad argument.\n");
+    switch (c)
+    {
+    case 'V':
+      std::cout << PACKAGE << VERSION << std::endl;
+      return 0;
+    case 'M':
+      stdin_only = true;
+      break;
+    case '2':
+      g_player.setdownfrequency(true);
+      break;
+    case 'f':
+      frameinfo = true;
+      break;
+    case 'm':
+      g_player.setforcetomono(true);
+      break;
+    case 'r':
+      repeat = true;
+      break;
+    case 's':
+      srandom(time(NULL));
+      shuffle = true;
+      break;
+    case 'v':
+      verbose++;
+      break;
+    case 'd':
+      devicename=optarg;
+      break;
+    case 'k':
+      startframe = atoi(optarg);
+      break;
+    case 'l':
+      list_file = optarg;
+      break;
+    default:
+      std::cerr << progname << ": unknown argument -" << char(optopt) << std::endl;
     }
   }
 
-  if(argc<=optind && vsplay_listsize==0)
+  if (list_file)
   {
-    printf("%s %s"
-#ifdef PTHREADEDMPEG
-	   " with pthread"
-#endif
-	   "\n"
-	   "Usage : vsplay [-2mrsvMVWS] [-d device] [-l listfile] "
-#ifdef PTHREADEDMPEG
-	   "[-t number] "
-#endif
-	   "files ...\n"
-	   "\n"
-	   "%s"
-	   ,PACKAGE,VERSION,help);
-    return 0;
+    if (!strcmp(list_file, "-"))
+      readlist(std::cin);
+    else
+    {
+      std::ifstream s(list_file);
+      if (!s.fail())
+        readlist(s);
+      else
+        std::cerr << progname << ": listfile not found" << std::endl;
+    }
+    if (verbose)
+      std::cerr << "List file: " << list_file << std::endl;
   }
 
-  if(vsplay_listsize==0)    // Make list by arguments
-    arglist(argc,argv,optind);
+  for (optind; optind < argc; ++optind)
+    playlist.push_back(std::string(argv[optind]));
+
+  if (!playlist.size())
+  {
+    usage();
+    return 0;
+  }
 
   // create the output device
   Soundplayer* device;
@@ -292,31 +323,19 @@ int main(int argc,char *argv[])
     return 1;
   }
 
+  g_player.setoutput(device);
+  signal(SIGINT, sigint_capture);
   do
   {
-    if(vsplay_shuffleflag)shufflelist();
+    if (shuffle)
+      for (unsigned int i = 0, s = playlist.size(); i < s; i++)
+        std::swap(playlist[i], playlist[random() % s]);
 
-    for(int i=0;i<vsplay_listsize;i++){
-      if (!single_threaded)
-      { // normal mode
-        if ( fork() )
-        {
-          signal(SIGINT, sigint_capture);
-          wait(NULL);
-        }
-        else
-        {
-          signal(SIGINT, sigint_abort);
-          play(vsplay_list[i], device);
-          exit(0);
-        }
-      }
-      else
-      { // single threaded mode
-	play(vsplay_list[i], device);
-      }
-    }
-  }while(vsplay_repeatflag);
+    std::vector<std::string>::iterator i;
+    for(i = playlist.begin(); i != playlist.end(); i++)
+      play(*i, device, startframe, frameinfo);
+
+  } while (repeat);
 
   delete device;
   

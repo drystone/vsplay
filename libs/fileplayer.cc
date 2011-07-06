@@ -20,25 +20,25 @@ using namespace std;
 #include "mpegsound.h"
 
 // File player superclass
-Fileplayer::Fileplayer(Soundplayer * player)
-    : player(player)
-    , _abort_flag(false)
+Fileplayer::Fileplayer()
+  : player(NULL)
+  , _abort_flag(false)
+  , __errorcode(SOUND_ERROR_OK)
 {
-  __errorcode=SOUND_ERROR_OK;
-};
+}
 
 Fileplayer::~Fileplayer()
 {
   delete player;
-};
+}
 
 // Mpegfileplayer
-Mpegfileplayer::Mpegfileplayer(Soundplayer * player)
-    : Fileplayer(player)
+Mpegfileplayer::Mpegfileplayer()
+  : Fileplayer()
+  , loader(NULL)
+  , server(NULL)
 {
-  loader=NULL;
-  server=NULL;
-};
+}
 
 Mpegfileplayer::~Mpegfileplayer()
 {

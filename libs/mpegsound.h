@@ -649,11 +649,12 @@ public:
 class Fileplayer
 {
 public:
-  Fileplayer(Soundplayer* player);
+  Fileplayer();
   virtual ~Fileplayer();
 
   int geterrorcode(void)        {return __errorcode;};
 
+  void setoutput(Soundplayer * p) { player = p; };
   virtual bool openfile(const char *filename)=0;
   virtual void setforcetomono(bool flag)            =0;
   virtual bool playing(int verbose,bool frameinfo, int startframe)                 =0;
@@ -676,7 +677,7 @@ private:
 class Mpegfileplayer : public Fileplayer
 {
 public:
-  Mpegfileplayer(Soundplayer* player);
+  Mpegfileplayer();
   ~Mpegfileplayer();
 
   bool openfile(const char *filename);

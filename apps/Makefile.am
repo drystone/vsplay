@@ -1,5 +1,5 @@
 bin_PROGRAMS = vsplay
-vsplay_SOURCES =  common.cc vsplay.cc vsplay.h
+vsplay_SOURCES = vsplay.cc vsplay.h
 
 LDADD= ../libs/libmpeg.a
 

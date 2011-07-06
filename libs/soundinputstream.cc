@@ -30,19 +30,14 @@ Soundinputstream *Soundinputstream::hopen(const char *filename, int *errorcode)
 {
   Soundinputstream *st;
 
-  if(filename==NULL)st=new Soundinputstreamfromfile;
-  else if(strstr(filename,"://"))st=new Soundinputstreamfromhttp;
-  else st=new Soundinputstreamfromfile;
-
-  if(st==NULL)
-  {
-    *errorcode=SOUND_ERROR_MEMORYNOTENOUGH;
-    return NULL;
-  }
+  if(strstr(filename,"://"))
+    st = new Soundinputstreamfromhttp;
+  else
+    st = new Soundinputstreamfromfile;
 
   if(!st->open(filename))
   {
-    *errorcode=st->geterrorcode();
+    *errorcode = st->geterrorcode();
     delete st;
     return NULL;
   }

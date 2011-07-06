@@ -26,10 +26,10 @@ bool Soundinputstreamfromfile::open(const char *filename)
 {
   struct stat buf;
 
-  if(filename==NULL)
+  if (!strcmp(filename, "-"))
   {
-    fp=stdin;
-    size=0;
+    fp = stdin;
+    size = 0;
     return true;
   }
   else if((fp=fopen(filename,"r"))==NULL)
