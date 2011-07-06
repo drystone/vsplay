@@ -34,8 +34,6 @@
 
 #include "mpegsound.h"
 
-#include "vsplay.h"
-
 char progname[MAXPATHLEN];
 int  verbose;
 
@@ -163,7 +161,12 @@ void readlist(std::istream& s)
   while (!s.eof())
   {
     s.getline(linebuf, 0x10000);
-    playlist.push_back(std::string(linebuf));
+    std::string line(linebuf);
+
+    // trim and store
+    size_t start = line.find_first_not_of(" \t");
+    if (start != std::string::npos)
+        playlist.push_back(line.substr(start, line.find_last_not_of(" \t")+1-start));
   }
   delete linebuf;
 }
