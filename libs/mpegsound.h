@@ -356,6 +356,7 @@ protected:
   unsigned int bitoffset;
   unsigned char buffer[4096], * pbits;
 public:
+  Bitstream() : bitoffset(0), pbits(buffer) {};
   inline void sync(void) { if (bitoffset) { ++pbits; bitoffset = 0; } };
   inline bool fillbuffer(int size, Soundinputstream * loader)
     { bitoffset = 0; pbits = buffer; return loader->_readbuffer(buffer, size);};

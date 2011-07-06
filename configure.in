@@ -21,15 +21,7 @@ AC_CHECK_LIB([tag], [main], [AC_CHECK_HEADERS([taglib/tag.h],
 	[LIBS="$LIBS -ltag"]
 )])
 AC_CHECK_LIB(m, cos)
-AC_CHECK_LIB(pthread,main,INCLUDEPTHREAD=1)
 AC_CHECK_LIB([asound], [snd_seq_create_simple_port], [WITH_ALSA=1])
-
-if test "$INCLUDEPTHREAD" = 1; then
-	LIBS="$LIBS -lpthread"
-    AC_DEFINE(PTHREADEDMPEG, 1, [Define to 1 if you want to use pthreads])
-    AC_DEFINE(_REENTRANT, 1, [Define to 1 for POSIX reentrancy])
-    AC_CHECK_HEADERS(pthread.h pthread/mit/pthread.h)
-fi
 
 dnl Checks for header files.
 AC_HEADER_STDC

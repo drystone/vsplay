@@ -78,6 +78,7 @@ Rawplayeralsa::setsoundtype(int stereo,int samplesize,int speed)
 {
     snd_pcm_format_t format = (samplesize == 16) ? SND_PCM_FORMAT_S16_LE : SND_PCM_FORMAT_UNKNOWN;
     int channels = stereo ? 2 : 1;
+    _abort_flag = false;
 
     _framesize = channels << 1;
     try

@@ -9,13 +9,7 @@
 #include "config.h"
 #endif
 
-#if HAVE_IOSTREAM
 #include <iostream>
-using namespace std;
-#else
-#include <iostream.h>
-#endif
-
 #include <math.h>
 #include "mpegsound.h"
 
@@ -29,7 +23,6 @@ Fileplayer::Fileplayer()
 
 Fileplayer::~Fileplayer()
 {
-  delete player;
 }
 
 // Mpegfileplayer
@@ -48,18 +41,19 @@ Mpegfileplayer::~Mpegfileplayer()
 
 bool Mpegfileplayer::openfile(const char *filename)
 {
-// Loader
-  {
-    int err;
-    if((loader=Soundinputstream::hopen(filename,&err))==NULL)
-      return seterrorcode(err);
-  }
+  if (loader) delete loader;
+  if (server) delete server;
+  loader = NULL;
+  server = NULL;
 
-// Server
+  int err;
+  if((loader=Soundinputstream::hopen(filename,&err))==NULL)
+    return seterrorcode(err);
+
   if((server=new Mpegtoraw(loader,player))==NULL)
     return seterrorcode(SOUND_ERROR_MEMORYNOTENOUGH);
 
-// Initialize server
+  _abort_flag = false;
   server->initialize();
   return true;
 }
@@ -76,10 +70,9 @@ void Mpegfileplayer::setdownfrequency(int value)
 
 char * tominsec(double s)
 {
-  int min=int(floor(s/60));
-  double sec=s-60*min;
-  char * buff = new char[15];
-  sprintf(buff,"%d:%2.2f",min,sec);
+  static char buff[15];
+  int min = s / 60;
+  sprintf(buff, "%d:%2.2f", min, s - (min * 60));
   return buff;
 }
 
@@ -90,7 +83,8 @@ bool Mpegfileplayer::playing(int verbose, bool frameinfo, int startframe)
       seterrorcode(server->geterrorcode());
       return false;
   }
-  if(verbose>0)showverbose(verbose);
+  if (verbose > 2)
+    showverbose(verbose);
 
   if (startframe) server->setframe(startframe);
 
@@ -99,15 +93,14 @@ bool Mpegfileplayer::playing(int verbose, bool frameinfo, int startframe)
   int totframes=server->gettotalframe();
   double tottime=1.0*totframes*pcmperframe/frequency;
   if(frameinfo) {
-    cout << "Totalframes " <<  totframes;
-    cout << "; Totaltime " << tominsec(tottime)  << endl;
+    std::cout << "Totalframes " <<  totframes;
+    std::cout << "; Totaltime " << tominsec(tottime)  << std::endl;
   }
 
   // Playing
   while (server->run(1)) {
     if (_abort_flag)
     {
-      server->stopthreadedplayer();
       player->abort();
       break;
     }
@@ -115,9 +108,9 @@ bool Mpegfileplayer::playing(int verbose, bool frameinfo, int startframe)
     if(frameinfo) {
       int currframe=server-> getcurrentframe();
       double currtime=1.0*currframe*pcmperframe/frequency;
-      cout << "Frame " << currframe << " [" << totframes-currframe << "]; ";
-      cout << "Time " << tominsec(currtime) << " [" ;
-      cout << tominsec(tottime-currtime) << "]" << endl ;
+      std::cout << "Frame " << currframe << " [" << totframes-currframe << "]; ";
+      std::cout << "Time " << tominsec(currtime) << " [" ;
+      std::cout << tominsec(tottime-currtime) << "]" << std::endl ;
     }
   }
 
@@ -126,21 +119,7 @@ bool Mpegfileplayer::playing(int verbose, bool frameinfo, int startframe)
   return false;
 }
 
-#ifdef PTHREADEDMPEG
-bool Mpegfileplayer::playingwiththread(int verbose,bool frameinfo,
-				       int framenumbers, int startframe)
-{
-  if (framenumbers < 20)
-    return playing(verbose, frameinfo, startframe);
-
-  server->makethreadedplayer(framenumbers);
-  bool ret = playing(verbose, frameinfo, startframe);
-  server->freethreadedplayer();
-  return ret;
-}
-#endif
-
-void Mpegfileplayer::showverbose(int )
+void Mpegfileplayer::showverbose(int)
 {
   static const char *modestring[4]={"stereo","joint stereo","dual channel","mono"};
 
@@ -153,3 +132,4 @@ void Mpegfileplayer::showverbose(int )
 	  ? "with crc check\n" 
 	  : "without crc check\n");
 }
+

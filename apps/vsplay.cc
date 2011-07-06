@@ -34,20 +34,19 @@
 
 #include "mpegsound.h"
 
+typedef enum {devicetype_oss, devicetype_alsa} Devicetype;
+bool single_threaded = false;
+Mpegfileplayer g_player;
 char progname[MAXPATHLEN];
-int  verbose;
-
+unsigned int g_verbose = 0;
 std::vector<std::string> playlist;
-
 const char *vsplay_Sounderrors[SOUND_ERROR_UNKNOWN]=
 { "Failed to open sound device.",
   "Sound device is busy.",
   "Buffersize of sound device is wrong.",
   "Sound device control error.",
-
   "Failed to open file for reading.",    // 5
   "Failed to read file.",                
-
   "Unkown proxy.",
   "Unkown host.",
   "Socket error.",
@@ -56,13 +55,10 @@ const char *vsplay_Sounderrors[SOUND_ERROR_UNKNOWN]=
   "Http request failed.",
   "Http write failed.",
   "Too many relocation",
-
   "Memory is not enough.",               // 15
   "Unexpected EOF.",
   "Bad sound file format.",
-
   "Cannot make thread.",
-
   "Unknown error.",
 };
 
@@ -85,10 +81,6 @@ void usage()
     << std::endl
     << "For more detail, see man page." << std::endl;
 }
-
-typedef enum {devicetype_oss, devicetype_alsa} Devicetype;
-bool single_threaded = false;
-Mpegfileplayer g_player;
 
 /***********************/
 /* Command line player */
@@ -115,11 +107,11 @@ std::ostream& operator<<(std::ostream& s, const TagLib::Tag& tag )
 
 static void play(const std::string& filename, Soundplayer* device, unsigned int startframe, bool frameinfo)
 {
-  if( verbose-- )
-    std::cout << filename << ":" << std::endl;
+  if( g_verbose )
+    std::cout << "Playing file: " << filename << std::endl;
 
 #ifdef TAGLIB
-  if( verbose>0 && filename != "-") // cant do ID3 stuff on stdin
+  if( g_verbose > 1 && filename != "-") // cant do ID3 stuff on stdin
   {
     std::cout << *TagLib::MPEG::File(filename.c_str()).tag();
   }
@@ -129,7 +121,7 @@ static void play(const std::string& filename, Soundplayer* device, unsigned int 
     error(g_player.geterrorcode());
   else
   {
-    g_player.playing(verbose - 1, frameinfo, startframe);
+    g_player.playing(g_verbose, frameinfo, startframe);
     if (g_player.geterrorcode() > 0)
       error(g_player.geterrorcode());
   }
@@ -273,7 +265,7 @@ int main(int argc,char *argv[])
       shuffle = true;
       break;
     case 'v':
-      verbose++;
+      g_verbose++;
       break;
     case 'd':
       devicename=optarg;
@@ -301,7 +293,7 @@ int main(int argc,char *argv[])
       else
         std::cerr << progname << ": listfile not found" << std::endl;
     }
-    if (verbose)
+    if (g_verbose)
       std::cerr << "List file: " << list_file << std::endl;
   }
 
