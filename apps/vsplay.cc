@@ -43,7 +43,7 @@ std::vector<std::string> playlist;
 const char *vsplay_Sounderrors[SOUND_ERROR_UNKNOWN]=
 { "Failed to open sound device.",
   "Sound device is busy.",
-  "Buffersize of sound device is wrong.",
+  "Failed writing to sound device.",
   "Sound device control error.",
   "Failed to open file for reading.",    // 5
   "Failed to read file.",                

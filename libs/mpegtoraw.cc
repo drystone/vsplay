@@ -316,10 +316,14 @@ bool Mpegtoraw::run(int frames)
     if(frames<0)
     {
       frames=-frames;
-      if (!player->setsoundtype(outputstereo,16,
-			   frequencies[version][frequency]>>downfrequency))
+      try
       {
-          seterrorcode(player->geterrorcode());
+        player->setsoundtype( outputstereo, 16,
+		   frequencies[version][frequency] >> downfrequency);
+      }
+      catch (Soundplayerexception &e)
+      {
+          seterrorcode(e.error);
           break;
       }
     }
@@ -331,7 +335,6 @@ bool Mpegtoraw::run(int frames)
     else if(layer==1)extractlayer1();
 
     flushrawdata();
-    if(player->geterrorcode())seterrorcode(geterrorcode());
   }
 
   return (geterrorcode()==SOUND_ERROR_OK);

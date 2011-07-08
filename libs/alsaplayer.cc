@@ -56,7 +56,8 @@ Rawplayeralsa::~Rawplayeralsa()
     if (_hw_params) snd_pcm_hw_params_free(_hw_params);
 }
 
-void Rawplayeralsa::initialize(const char* filename) throw (Soundplayerexception)
+void Rawplayeralsa::initialize(const char* filename)
+  throw (Soundplayerexception)
 {
     try
     {
@@ -71,8 +72,8 @@ void Rawplayeralsa::initialize(const char* filename) throw (Soundplayerexception
     }
 }
 
-bool 
-Rawplayeralsa::setsoundtype(int stereo,int samplesize,int speed)
+void Rawplayeralsa::setsoundtype(int stereo, int samplesize, int speed)
+  throw (Soundplayerexception)
 {
     snd_pcm_format_t format = (samplesize == 16) ? SND_PCM_FORMAT_S16_LE : SND_PCM_FORMAT_UNKNOWN;
     int channels = stereo ? 2 : 1;
@@ -87,16 +88,15 @@ Rawplayeralsa::setsoundtype(int stereo,int samplesize,int speed)
         alsa_throw(snd_pcm_hw_params_set_rate(_device_handle, _hw_params, speed, 0));
         alsa_throw(snd_pcm_hw_params(_device_handle, _hw_params));
         alsa_throw(snd_pcm_prepare(_device_handle));
-        return true;
     }
     catch (Alsa_error &e)
     {
-        return seterrorcode(SOUND_ERROR_DEVCTRLERROR);
+        throw Soundplayerexception(SOUND_ERROR_DEVOPENFAIL);
     }
 }
 
-bool
-Rawplayeralsa::putblock(void *buffer, int size)
+void Rawplayeralsa::putblock(void *buffer, int size)
+  throw (Soundplayerexception)
 {
     snd_pcm_uframes_t frames = size / _framesize;
     while (frames && !_abort_flag)
@@ -114,14 +114,13 @@ Rawplayeralsa::putblock(void *buffer, int size)
             {
             case -EPIPE:
                 if (snd_pcm_recover(_device_handle, -EPIPE, 1) < 0)
-                    return false;
+                    throw Soundplayerexception(SOUND_ERROR_DEVCTRLERROR);
                 break;
             otherwise:
-                return false;
+                throw Soundplayerexception(SOUND_ERROR_DEVWRITEFAIL);
             };
         }
     }
-    return true;
 }
 
 void

@@ -70,46 +70,37 @@ void Rawplayer::abort(void)
   IOCTL(audiohandle,SNDCTL_DSP_RESET,a);
 }
 
-int Rawplayer::getprocessed(void)
+void Rawplayer::setsoundtype(int stereo, int samplesize, int speed)
+  throw (Soundplayerexception)
 {
-  audio_buf_info info;
-  int r;
+  rawstereo = stereo;
+  rawsamplesize = samplesize;
+  rawspeed = speed;
+  forcetomono = forceto8 = false;
 
-  IOCTL(audiohandle,SNDCTL_DSP_GETOSPACE,info);
-
-  r=(info.fragstotal-info.fragments)*info.fragsize;
-
-  return r;
+  resetsoundtype();
 }
 
-bool Rawplayer::setsoundtype(int stereo,int samplesize,int speed)
-{
-  rawstereo=stereo;
-  rawsamplesize=samplesize;
-  rawspeed=speed;
-  forcetomono=forceto8=false;
-
-  return resetsoundtype();
-}
-
-bool Rawplayer::resetsoundtype(void)
+void Rawplayer::resetsoundtype(void)
+  throw (Soundplayerexception)
 {
   int tmp;
 
-  if(ioctl(audiohandle,SNDCTL_DSP_SYNC,NULL)<0)
-    return seterrorcode(SOUND_ERROR_DEVCTRLERROR);
+  if (ioctl(audiohandle, SNDCTL_DSP_SYNC, NULL) < 0)
+    throw Soundplayerexception(SOUND_ERROR_DEVCTRLERROR);
 
 #ifdef SOUND_VERSION
-  if(ioctl(audiohandle,SNDCTL_DSP_STEREO,&rawstereo)<0)
+  if (ioctl(audiohandle, SNDCTL_DSP_STEREO, &rawstereo) < 0)
 #else
-  if(rawstereo!=ioctl(audiohandle,SNDCTL_DSP_STEREO,rawstereo))
+  if (rawstereo != ioctl(audiohandle, SNDCTL_DSP_STEREO, rawstereo))
 #endif
   {
-    rawstereo=MODE_MONO;
-    forcetomono=true;
+    rawstereo = MODE_MONO;
+    forcetomono = true;
   }
 
   tmp=rawsamplesize;
+  // TODO ?? &tmp
   IOCTL(audiohandle,SNDCTL_DSP_SAMPLESIZE,tmp);
   if(tmp!=rawsamplesize)
     if(rawsamplesize==16)
@@ -117,44 +108,40 @@ bool Rawplayer::resetsoundtype(void)
       rawsamplesize=8;
       IOCTL(audiohandle,SNDCTL_DSP_SAMPLESIZE,rawsamplesize);
       if(rawsamplesize!=8)
-	return seterrorcode(SOUND_ERROR_DEVCTRLERROR);
+        throw Soundplayerexception(SOUND_ERROR_DEVCTRLERROR);
 
       forceto8=true;
     }
 
   if(IOCTL(audiohandle,SNDCTL_DSP_SPEED,rawspeed)<0)
-    return seterrorcode(SOUND_ERROR_DEVCTRLERROR);
-
-  return true;
+    throw Soundplayerexception(SOUND_ERROR_DEVCTRLERROR);
 }
 
-bool Rawplayer::putblock(void *buffer,int size)
+void Rawplayer::putblock(void *buffer, int size)
+  throw (Soundplayerexception)
 {
-  int modifiedsize=size;
+  int modifiedsize = size;
 
   if(forcetomono || forceto8)
   {
-    register unsigned char modify=0;
-    register unsigned char *source,*dest;
-    int increment=0,c;
+    register unsigned char *source, *dest;
+    int increment = 0, c;
 
-    source=dest=(unsigned char *)buffer;
+    source = dest = (unsigned char *)buffer;
 
-    if(forcetomono)increment++;
-    if(forceto8)increment++,source++;
+    if (forcetomono) increment++;
+    if (forceto8) increment++, source++;
 
-    c=modifiedsize=size>>increment;
-    increment<<=1;
+    c = modifiedsize = size >> increment;
+    increment <<= 1;
 
     while(c--)
     {
-      *(dest++)=(*source)+modify;
-      source+=increment;
+      *(dest++) = *source;
+      source += increment;
     }
   }
 
-  write(audiohandle,buffer,modifiedsize);
-
-  return true;
+  write(audiohandle, buffer, modifiedsize);
 }
 

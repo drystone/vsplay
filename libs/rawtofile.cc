@@ -28,17 +28,18 @@ void Rawtofile::initialize(const char *filename) throw (Soundplayerexception)
     throw Soundplayerexception(SOUND_ERROR_DEVOPENFAIL);
 }
 
-bool Rawtofile::setsoundtype(int stereo,int samplesize,int speed)
+void Rawtofile::setsoundtype(int stereo, int samplesize, int speed)
+  throw (Soundplayerexception)
 {
-  rawstereo=stereo;
-  rawsamplesize=samplesize;
-  rawspeed=speed;
-
-  return true;
+  rawstereo = stereo;
+  rawsamplesize = samplesize;
+  rawspeed = speed;
 }
 
-bool Rawtofile::putblock(void *buffer,int size)
+void Rawtofile::putblock(void *buffer,int size)
+  throw (Soundplayerexception)
 {
-  return (write(filehandle,buffer,size)==size);
+  if (write(filehandle, buffer, size) != size)
+    throw Soundplayerexception(SOUND_ERROR_DEVWRITEFAIL);
 };
 

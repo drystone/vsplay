@@ -30,7 +30,7 @@
 // Device error (for player)
 #define SOUND_ERROR_DEVOPENFAIL       1
 #define SOUND_ERROR_DEVBUSY           2
-#define SOUND_ERROR_DEVBADBUFFERSIZE  3
+#define SOUND_ERROR_DEVWRITEFAIL      3
 #define SOUND_ERROR_DEVCTRLERROR      4
 
 // Sound file (for reader)
@@ -239,18 +239,17 @@ struct Soundplayerexception
 class Soundplayer
 {
 public:
-  Soundplayer() {__errorcode=SOUND_ERROR_OK;};
   virtual ~Soundplayer() {};
-  virtual void initialize(const char *filename) throw (Soundplayerexception) = 0;
-  virtual bool setsoundtype(int stereo, int samplesize, int speed) = 0;
-  virtual bool putblock(void *buffer,int size) = 0;
-  virtual bool resetsoundtype(void) { return true; };
+  virtual void initialize(const char *filename)
+    throw (Soundplayerexception) = 0;
+  virtual void setsoundtype(int stereo, int samplesize, int speed)
+    throw (Soundplayerexception) = 0;
+  virtual void putblock(void *buffer,int size)
+    throw (Soundplayerexception) = 0;
+  virtual void resetsoundtype(void)
+    throw (Soundplayerexception) {};
   virtual void abort(void) {};
   virtual void drain(void) {};
-
-  int geterrorcode(void) {return __errorcode;};
-  bool seterrorcode(int errorno) {__errorcode=errorno; return false;};
-  int  __errorcode;
 };
 
 
@@ -258,9 +257,12 @@ class Rawtofile : public Soundplayer
 {
 public:
   ~Rawtofile();
-  void initialize(const char *filename) throw (Soundplayerexception);
-  bool setsoundtype(int stereo,int samplesize,int speed);
-  bool putblock(void *buffer,int size);
+  void initialize(const char *filename)
+    throw (Soundplayerexception);
+  void setsoundtype(int stereo,int samplesize,int speed)
+    throw (Soundplayerexception);
+  void putblock(void *buffer,int size)
+    throw (Soundplayerexception);
 
 private:
   int filehandle;
@@ -273,14 +275,17 @@ class Rawplayer : public Soundplayer
 public:
   ~Rawplayer();
 
-  void initialize(const char *filename) throw (Soundplayerexception);
+  void initialize(const char *filename)
+    throw (Soundplayerexception);
   void abort(void);
-  int  getprocessed(void);
 
-  bool setsoundtype(int stereo,int samplesize,int speed);
-  bool resetsoundtype(void);
+  void setsoundtype(int stereo,int samplesize,int speed)
+    throw (Soundplayerexception);
+  void resetsoundtype(void)
+    throw (Soundplayerexception);
 
-  bool putblock(void *buffer,int size);
+  void putblock(void *buffer,int size)
+    throw (Soundplayerexception);
 
   int  getblocksize(void);
 
@@ -304,9 +309,12 @@ public:
   Rawplayeralsa();
   ~Rawplayeralsa();
 
-  void initialize(const char *filename) throw (Soundplayerexception);
-  bool setsoundtype(int stereo,int samplesize,int speed);
-  bool putblock(void *buffer,int size);
+  void initialize(const char *filename)
+    throw (Soundplayerexception);
+  void setsoundtype(int stereo,int samplesize,int speed)
+    throw (Soundplayerexception);
+  void putblock(void *buffer,int size)
+    throw (Soundplayerexception);
   void abort(void);
   void drain() { snd_pcm_drain(_device_handle); };
 
