@@ -57,27 +57,10 @@ Rawplayer::~Rawplayer()
   close(audiohandle);
 }
 
-bool Rawplayer::initialize(const char *filename)
+void Rawplayer::initialize(const char *filename) throw (Soundplayerexception)
 {
-  int flag;
-
-  rawbuffersize=0;
-  quota=0;
-
-  if((audiohandle=open(filename,O_WRONLY|O_NDELAY,0))==-1)
-    return seterrorcode(SOUND_ERROR_DEVOPENFAIL);
-
-  if((flag=fcntl(audiohandle,F_GETFL,0))<0)
-    return seterrorcode(SOUND_ERROR_DEVOPENFAIL);
-  flag&=~O_NDELAY;
-  if(fcntl(audiohandle,F_SETFL,flag)<0)
-    return seterrorcode(SOUND_ERROR_DEVOPENFAIL);
-
-  IOCTL(audiohandle,SNDCTL_DSP_GETBLKSIZE,audiobuffersize);
-  if(audiobuffersize<4 || audiobuffersize>65536)
-    return seterrorcode(SOUND_ERROR_DEVBADBUFFERSIZE);
-
-  return true;
+  if ((audiohandle = open(filename, O_WRONLY)) == -1)
+    throw Soundplayerexception(SOUND_ERROR_DEVOPENFAIL);
 }
 
 void Rawplayer::abort(void)
@@ -170,14 +153,8 @@ bool Rawplayer::putblock(void *buffer,int size)
     }
   }
 
-  if(quota)
-    while(getprocessed()>quota)usleep(3);
   write(audiohandle,buffer,modifiedsize);
 
   return true;
 }
 
-int Rawplayer::getblocksize(void)
-{
-  return audiobuffersize;
-}

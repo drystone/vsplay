@@ -207,13 +207,15 @@ Soundplayer * open_device(const char * devicename, Devicetype devicetype) throw 
 #endif // ALSA
   }
 
-  if (!device)
-  { // memory allocation problem
+  if (!device) // memory allocation problem
     throw SOUND_ERROR_MEMORYNOTENOUGH;
+
+  try
+  {
+    device->initialize(devicename);
   }
-  else if (!device->initialize(devicename))
+  catch (Soundplayerexception& e)
   { // initialisation problem
-    int error = device->geterrorcode();
     delete device;
     throw error;
   }

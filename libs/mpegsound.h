@@ -230,29 +230,26 @@ private:
 /* Sound player interface classes */
 /**********************************/
 // Superclass for player
+struct Soundplayerexception
+{
+  int error;
+  Soundplayerexception(int e) { error = e; };
+};
+
 class Soundplayer
 {
 public:
   Soundplayer() {__errorcode=SOUND_ERROR_OK;};
-  virtual ~Soundplayer();
-
-  virtual bool initialize(const char *filename)                       =0;
-  virtual void abort(void);
-  virtual int  getprocessed(void);
-
-  virtual bool setsoundtype(int stereo,int samplesize,int speed)=0;
-  virtual bool resetsoundtype(void);
-
-  virtual bool putblock(void *buffer,int size)                  =0;
-  virtual int  getblocksize(void);
+  virtual ~Soundplayer() {};
+  virtual void initialize(const char *filename) throw (Soundplayerexception) = 0;
+  virtual bool setsoundtype(int stereo, int samplesize, int speed) = 0;
+  virtual bool putblock(void *buffer,int size) = 0;
+  virtual bool resetsoundtype(void) { return true; };
+  virtual void abort(void) {};
+  virtual void drain(void) {};
 
   int geterrorcode(void) {return __errorcode;};
-  virtual void drain(void) = 0;
-
-protected:
   bool seterrorcode(int errorno) {__errorcode=errorno; return false;};
-
-private:
   int  __errorcode;
 };
 
@@ -261,11 +258,9 @@ class Rawtofile : public Soundplayer
 {
 public:
   ~Rawtofile();
-
-  bool initialize(const char *filename);
+  void initialize(const char *filename) throw (Soundplayerexception);
   bool setsoundtype(int stereo,int samplesize,int speed);
   bool putblock(void *buffer,int size);
-  void drain(void) {};
 
 private:
   int filehandle;
@@ -278,7 +273,7 @@ class Rawplayer : public Soundplayer
 public:
   ~Rawplayer();
 
-  bool initialize(const char *filename);
+  void initialize(const char *filename) throw (Soundplayerexception);
   void abort(void);
   int  getprocessed(void);
 
@@ -288,9 +283,6 @@ public:
   bool putblock(void *buffer,int size);
 
   int  getblocksize(void);
-
-  void setquota(int q){quota=q;};
-  int  getquota(void) {return quota;};
 
   static const char *defaultdevice;
   static int  setvolume(int volume);
@@ -302,7 +294,6 @@ private:
   int  audiohandle,audiobuffersize;
   int  rawstereo,rawsamplesize,rawspeed;
   bool forcetomono,forceto8;
-  int  quota;
 };
 
 #ifdef ALSA
@@ -313,7 +304,7 @@ public:
   Rawplayeralsa();
   ~Rawplayeralsa();
 
-  bool initialize(const char *filename);
+  void initialize(const char *filename) throw (Soundplayerexception);
   bool setsoundtype(int stereo,int samplesize,int speed);
   bool putblock(void *buffer,int size);
   void abort(void);

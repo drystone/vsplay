@@ -56,8 +56,7 @@ Rawplayeralsa::~Rawplayeralsa()
     if (_hw_params) snd_pcm_hw_params_free(_hw_params);
 }
 
-bool
-Rawplayeralsa::initialize(const char* filename)
+void Rawplayeralsa::initialize(const char* filename) throw (Soundplayerexception)
 {
     try
     {
@@ -65,11 +64,10 @@ Rawplayeralsa::initialize(const char* filename)
         alsa_throw(snd_pcm_hw_params_malloc(&_hw_params));
         alsa_throw(snd_pcm_open(&_device_handle, filename, SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK));
         alsa_throw(snd_pcm_hw_params_any(_device_handle, _hw_params));
-        return true;
     }
     catch (Alsa_error &e)
     {
-        return seterrorcode(SOUND_ERROR_DEVOPENFAIL);
+        throw Soundplayerexception(SOUND_ERROR_DEVOPENFAIL);
     }
 }
 

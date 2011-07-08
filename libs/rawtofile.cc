@@ -20,13 +20,12 @@ Rawtofile::~Rawtofile()
   close(filehandle);
 }
 
-bool Rawtofile::initialize(const char *filename)
+void Rawtofile::initialize(const char *filename) throw (Soundplayerexception)
 {
-  if(filename==NULL)filehandle=1;
-  else if((filehandle=creat(filename,0644))==-1)
-    return seterrorcode(SOUND_ERROR_DEVOPENFAIL);
-
-  return true;
+  if (filename == NULL)
+    filehandle = 1;
+  else if ((filehandle = creat(filename, 0644)) == -1)
+    throw Soundplayerexception(SOUND_ERROR_DEVOPENFAIL);
 }
 
 bool Rawtofile::setsoundtype(int stereo,int samplesize,int speed)
