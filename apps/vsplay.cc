@@ -105,7 +105,7 @@ std::ostream& operator<<(std::ostream& s, const TagLib::Tag& tag )
 }
 #endif /* TAGLIB */
 
-static void play(const std::string& filename, Soundplayer* device, unsigned int startframe, bool frameinfo)
+static void play(const std::string& filename, Soundplayer* device, bool frameinfo)
 {
   if( g_verbose )
     std::cout << "Playing file: " << filename << std::endl;
@@ -118,10 +118,10 @@ static void play(const std::string& filename, Soundplayer* device, unsigned int 
 #endif /* TAGLIB */        
   
   if(!g_player.openfile(filename.c_str()))
-    error(g_player.geterrorcode());
+    error(SOUND_ERROR_FILEOPENFAIL);
   else
   {
-    g_player.playing(g_verbose, frameinfo, startframe);
+    g_player.playing(g_verbose);
     if (g_player.geterrorcode() > 0)
       error(g_player.geterrorcode());
   }
@@ -226,7 +226,6 @@ int main(int argc,char *argv[])
   char const * devicename = NULL;
   char const * list_file = NULL;
   bool stdin_only = false;
-  unsigned int startframe = 0;
   bool shuffle = false;
   bool repeat = false;
   bool frameinfo = false;
@@ -269,9 +268,6 @@ int main(int argc,char *argv[])
       break;
     case 'd':
       devicename=optarg;
-      break;
-    case 'k':
-      startframe = atoi(optarg);
       break;
     case 'l':
       list_file = optarg;
@@ -328,7 +324,7 @@ int main(int argc,char *argv[])
 
     std::vector<std::string>::iterator i;
     for(i = playlist.begin(); i != playlist.end(); i++)
-      play(*i, device, startframe, frameinfo);
+      play(*i, device, frameinfo);
 
   } while (repeat);
 

@@ -46,9 +46,17 @@ bool Mpegfileplayer::openfile(const char *filename)
   loader = NULL;
   server = NULL;
 
-  int err;
-  if((loader=Soundinputstream::hopen(filename,&err))==NULL)
-    return seterrorcode(err);
+  if(strstr(filename,"://"))
+    loader = new Soundinputstreamfromhttp;
+  else
+    loader = new Soundinputstreamfromfile;
+
+  if(!loader->open(filename))
+  {
+    delete loader;
+    loader = NULL;
+    return false;
+  }
 
   if((server=new Mpegtoraw(loader,player))==NULL)
     return seterrorcode(SOUND_ERROR_MEMORYNOTENOUGH);
@@ -68,15 +76,7 @@ void Mpegfileplayer::setdownfrequency(int value)
   server->setdownfrequency(value);
 };
 
-char * tominsec(double s)
-{
-  static char buff[15];
-  int min = s / 60;
-  sprintf(buff, "%d:%2.2f", min, s - (min * 60));
-  return buff;
-}
-
-bool Mpegfileplayer::playing(int verbose, bool frameinfo, int startframe)
+bool Mpegfileplayer::playing(int verbose)
 {
   if(!server->run(-1))
   {       // Initialize MPEG Layer 3
@@ -86,16 +86,8 @@ bool Mpegfileplayer::playing(int verbose, bool frameinfo, int startframe)
   if (verbose > 2)
     showverbose(verbose);
 
-  if (startframe) server->setframe(startframe);
-
   int pcmperframe=server->getpcmperframe();
   int frequency=server->getfrequency();
-  int totframes=server->gettotalframe();
-  double tottime=1.0*totframes*pcmperframe/frequency;
-  if(frameinfo) {
-    std::cout << "Totalframes " <<  totframes;
-    std::cout << "; Totaltime " << tominsec(tottime)  << std::endl;
-  }
 
   // Playing
   while (server->run(1)) {
@@ -103,14 +95,6 @@ bool Mpegfileplayer::playing(int verbose, bool frameinfo, int startframe)
     {
       player->abort();
       break;
-    }
-  
-    if(frameinfo) {
-      int currframe=server-> getcurrentframe();
-      double currtime=1.0*currframe*pcmperframe/frequency;
-      std::cout << "Frame " << currframe << " [" << totframes-currframe << "]; ";
-      std::cout << "Time " << tominsec(currtime) << " [" ;
-      std::cout << tominsec(tottime-currtime) << "]" << std::endl ;
     }
   }
 

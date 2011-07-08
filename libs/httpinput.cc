@@ -34,20 +34,12 @@ static const char *httpstr="http://";
 
 bool Soundinputstreamfromhttp::writestring(int fd, char *string)
 {
-  int result,bytes=strlen(string);
+  int result, bytes = strlen(string);
 
   while(bytes)
   {
-    if((result=write(fd,string,bytes))<0 && errno!=EINTR)
-    {
-      seterrorcode(SOUND_ERROR_HTTPWRITEFAIL);
+    if((result=write(fd,string,bytes))<=0 && errno!=EINTR)
       return false;
-    }
-    else if(result==0)
-    {
-      seterrorcode(SOUND_ERROR_HTTPWRITEFAIL);
-      return false;
-    }
     string += result;
     bytes -= result;
   }
@@ -63,10 +55,7 @@ bool Soundinputstreamfromhttp::readstring(char *string,int maxlen,FILE *f)
     result=fgets(string,maxlen,f);
   }while(!result  && errno==EINTR);
   if(!result)
-  {
-    seterrorcode(SOUND_ERROR_FILEREADFAIL);
     return false;
-  }
 
   return true;
 }
@@ -122,7 +111,7 @@ char *proxyurl=NULL;
 unsigned long proxyip=0;
 unsigned int proxyport;
 
-FILE *Soundinputstreamfromhttp::http_open(const char *url)
+bool Soundinputstreamfromhttp::open(const char *url)
 {
   char *purl=NULL,*host,*request,*sptr;
   char agent[50];
@@ -143,10 +132,7 @@ FILE *Soundinputstreamfromhttp::http_open(const char *url)
     if (proxyurl && proxyurl[0] && strcmp(proxyurl, "none"))
     {
       if (!(url2hostport(proxyurl, &host, &proxyip, &proxyport)))
-      {
-	seterrorcode(SOUND_ERROR_UNKNOWNPROXY);
-	return NULL;
-      }
+	return false;
       if(host)free(host);
     }
     else
@@ -156,10 +142,7 @@ FILE *Soundinputstreamfromhttp::http_open(const char *url)
   if((linelength=strlen(url)+100)<1024)
     linelength=1024;
   if(!(request=(char *)malloc(linelength)) || !(purl=(char *)malloc(1024))) 
-  {
-    seterrorcode(SOUND_ERROR_MEMORYNOTENOUGH);
-    return NULL;
-  }
+    return false;
   strncpy(purl,url,1023);
   purl[1023]='\0';
   do{
@@ -175,133 +158,49 @@ FILE *Soundinputstreamfromhttp::http_open(const char *url)
     else
     {
       if(!(sptr=url2hostport(purl,&host,&myip,&myport)))
-      {
-	seterrorcode(SOUND_ERROR_UNKNOWNHOST);
-	return NULL;
-      }
+	return false;
       if (host)
 	free (host);
       strcat (request, sptr);
     }
     sprintf (agent, " HTTP/1.0\r\nUser-Agent: %s/%s\r\n\r\n",
-	     "Splay","0.6");
+	     "vsplay","0.6");
     strcat (request, agent);
     server.sin_family = AF_INET;
     server.sin_port = htons(myport);
     server.sin_addr.s_addr = myip;
     if((sock=socket(PF_INET,SOCK_STREAM,6))<0)
-    {
-      seterrorcode(SOUND_ERROR_SOCKET);
-      return NULL;
-    }
+      return false;
     if(connect(sock,(struct sockaddr *)&server,sizeof(server)))
-    {
-      seterrorcode(SOUND_ERROR_CONNECT);
-      return NULL;
-    }
-    if(!writestring(sock,request))return NULL;
-    if(!(myfile=fdopen(sock, "rb")))
-    {
-      seterrorcode(SOUND_ERROR_FDOPEN);
-      return NULL;
-    };
+      return false;
+    if(!writestring(sock,request))
+      return false;
+    if(!(_fp=fdopen(sock, "rb")))
+      return false;
     relocate=false;
     purl[0]='\0';
-    if(!readstring(request,linelength-1,myfile))return NULL;
+    if(!readstring(request,linelength-1,_fp))
+      return false;
     if((sptr=strchr(request,' ')))
     {
       switch(sptr[1])
       {
         case '3':relocate=true;
         case '2':break;
-        default: seterrorcode(SOUND_ERROR_HTTPFAIL);
-	         return NULL;
+        default: return false;
       }
     }
     do{
-      if(!readstring(request,linelength-1,myfile))return NULL;
+      if(!readstring(request,linelength-1,_fp))
+        return false;
       if(!strncmp(request,"Location:",9))
 	strncpy (purl,request+10,1023);
     }while(request[0]!='\r' && request[0]!='n');
   }while(relocate && purl[0] && numrelocs++<5);
   if(relocate)
-  { 
-    seterrorcode(SOUND_ERROR_TOOMANYRELOC);
-    return NULL;
-  }
+    return false;
   free(purl);
   free(request);
-  return myfile;
-}
-
-Soundinputstreamfromhttp::Soundinputstreamfromhttp()
-{
-  fp=NULL;
-}
-
-Soundinputstreamfromhttp::~Soundinputstreamfromhttp()
-{
-  if(fp)fclose(fp);
-}
-
-bool Soundinputstreamfromhttp::open(const char *url)
-{
-  if((fp=http_open(url))==NULL)
-  {
-    seterrorcode(SOUND_ERROR_FILEOPENFAIL);
-    return false;
-  }
-
   return true;
-}
-
-int Soundinputstreamfromhttp::getbytedirect(void)
-{
-  int c;
-
-  if((c=getc(fp))<0)
-  {
-    seterrorcode(SOUND_ERROR_FILEREADFAIL);
-    return -1;
-  }
-
-  return c;
-}
-
-bool Soundinputstreamfromhttp::_readbuffer(unsigned char *buffer,int size)
-{
-  if(fread(buffer,size,1,fp)!=1)
-  {
-    seterrorcode(SOUND_ERROR_FILEREADFAIL);
-    return false;
-  }
-  return true;
-}
-
-bool Soundinputstreamfromhttp::eof(void)
-{
-  return feof(fp);
-};
-
-int Soundinputstreamfromhttp::getblock(char *buffer,int size)
-{
-  int l;
-  l=fread(buffer,1,size,fp);
-  if(l==0)seterrorcode(SOUND_ERROR_FILEREADFAIL);
-  return l;
-}
-
-int Soundinputstreamfromhttp::getsize(void)
-{
-  return 0;
-}
-
-void Soundinputstreamfromhttp::setposition(int)
-{
-}
-
-int  Soundinputstreamfromhttp::getposition(void)
-{
-  return 0;
 }
 

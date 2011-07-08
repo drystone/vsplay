@@ -434,11 +434,11 @@ void Mpegtoraw::extractlayer2(void)
 
     for(i=0;i<s;i++,t++)
     {
-      bitalloc[LS][i]=bitstream.getbits(*t);
-      bitalloc[RS][i]=bitstream.getbits(*t);
+      bitalloc[LS][i]=getbits(*t);
+      bitalloc[RS][i]=getbits(*t);
     }
     for(;i<n;i++,t++)
-      bitalloc[LS][i]=bitalloc[RS][i]=bitstream.getbits(*t);
+      bitalloc[LS][i]=bitalloc[RS][i]=getbits(*t);
   }
 
 
@@ -446,12 +446,12 @@ void Mpegtoraw::extractlayer2(void)
   if(inputstereo)
     for(register int i=0;i<n;i++)
     {
-      if(bitalloc[LS][i])scaleselector[LS][i]=bitstream.getbits(2);
-      if(bitalloc[RS][i])scaleselector[RS][i]=bitstream.getbits(2);
+      if(bitalloc[LS][i])scaleselector[LS][i]=getbits(2);
+      if(bitalloc[RS][i])scaleselector[RS][i]=getbits(2);
     }
   else
     for(register int i=0;i<n;i++)
-      if(bitalloc[LS][i])scaleselector[LS][i]=bitstream.getbits(2);
+      if(bitalloc[LS][i])scaleselector[LS][i]=getbits(2);
 
   // Scale index
   {
@@ -508,21 +508,21 @@ void Mpegtoraw::extractlayer2(void)
 
 	switch(scaleselector[LS][i])
 	{
-	  case 0:scalefactor[LS][0][i]=scalefactorstable[bitstream.getbits(6)];
-		 scalefactor[LS][1][i]=scalefactorstable[bitstream.getbits(6)];
-		 scalefactor[LS][2][i]=scalefactorstable[bitstream.getbits(6)];
+	  case 0:scalefactor[LS][0][i]=scalefactorstable[getbits(6)];
+		 scalefactor[LS][1][i]=scalefactorstable[getbits(6)];
+		 scalefactor[LS][2][i]=scalefactorstable[getbits(6)];
 		 break;
 	  case 1:scalefactor[LS][0][i]=
-		 scalefactor[LS][1][i]=scalefactorstable[bitstream.getbits(6)];
-		 scalefactor[LS][2][i]=scalefactorstable[bitstream.getbits(6)];
+		 scalefactor[LS][1][i]=scalefactorstable[getbits(6)];
+		 scalefactor[LS][2][i]=scalefactorstable[getbits(6)];
 		 break;
 	  case 2:scalefactor[LS][0][i]=
 		 scalefactor[LS][1][i]=
-		 scalefactor[LS][2][i]=scalefactorstable[bitstream.getbits(6)];
+		 scalefactor[LS][2][i]=scalefactorstable[getbits(6)];
 		 break;
-	  case 3:scalefactor[LS][0][i]=scalefactorstable[bitstream.getbits(6)];
+	  case 3:scalefactor[LS][0][i]=scalefactorstable[getbits(6)];
 		 scalefactor[LS][1][i]=
-		 scalefactor[LS][2][i]=scalefactorstable[bitstream.getbits(6)];
+		 scalefactor[LS][2][i]=scalefactorstable[getbits(6)];
 		 break;
 	}
       }
@@ -576,21 +576,21 @@ void Mpegtoraw::extractlayer2(void)
 
 	switch(scaleselector[RS][i])
 	{
-	  case 0 : scalefactor[RS][0][i]=scalefactorstable[bitstream.getbits(6)];
-		   scalefactor[RS][1][i]=scalefactorstable[bitstream.getbits(6)];
-		   scalefactor[RS][2][i]=scalefactorstable[bitstream.getbits(6)];
+	  case 0 : scalefactor[RS][0][i]=scalefactorstable[getbits(6)];
+		   scalefactor[RS][1][i]=scalefactorstable[getbits(6)];
+		   scalefactor[RS][2][i]=scalefactorstable[getbits(6)];
 		   break;
 	  case 1 : scalefactor[RS][0][i]=
-		   scalefactor[RS][1][i]=scalefactorstable[bitstream.getbits(6)];
-		   scalefactor[RS][2][i]=scalefactorstable[bitstream.getbits(6)];
+		   scalefactor[RS][1][i]=scalefactorstable[getbits(6)];
+		   scalefactor[RS][2][i]=scalefactorstable[getbits(6)];
 		   break;
 	  case 2 : scalefactor[RS][0][i]=
 		   scalefactor[RS][1][i]=
-		   scalefactor[RS][2][i]=scalefactorstable[bitstream.getbits(6)];
+		   scalefactor[RS][2][i]=scalefactorstable[getbits(6)];
 		   break;
-	  case 3 : scalefactor[RS][0][i]=scalefactorstable[bitstream.getbits(6)];
+	  case 3 : scalefactor[RS][0][i]=scalefactorstable[getbits(6)];
 		   scalefactor[RS][1][i]=
-		   scalefactor[RS][2][i]=scalefactorstable[bitstream.getbits(6)];
+		   scalefactor[RS][2][i]=scalefactorstable[getbits(6)];
 		   break;
 	}
       }
@@ -612,7 +612,7 @@ void Mpegtoraw::extractlayer2(void)
 	  if(group[LS][i])
 	  {
 	    register const REAL *s;
-	    int code=bitstream.getbits(codelength[LS][i]);
+	    int code=getbits(codelength[LS][i]);
 
 	    code+=code<<1;
 	    s=group[LS][i]+code;
@@ -624,11 +624,11 @@ void Mpegtoraw::extractlayer2(void)
 	  else
 	  {
 	    fraction[LS][0][i]=
-	      REAL(bitstream.getbits(codelength[LS][i]))*factor[LS][i]-1.0;
+	      REAL(getbits(codelength[LS][i]))*factor[LS][i]-1.0;
 	    fraction[LS][1][i]=
-	      REAL(bitstream.getbits(codelength[LS][i]))*factor[LS][i]-1.0;
+	      REAL(getbits(codelength[LS][i]))*factor[LS][i]-1.0;
 	    fraction[LS][2][i]=
-	      REAL(bitstream.getbits(codelength[LS][i]))*factor[LS][i]-1.0;
+	      REAL(getbits(codelength[LS][i]))*factor[LS][i]-1.0;
 	  }
 	}
 	else fraction[LS][0][i]=fraction[LS][1][i]=fraction[LS][2][i]=0.0;
@@ -638,7 +638,7 @@ void Mpegtoraw::extractlayer2(void)
 	  if(group[RS][i])
 	  {
 	    const REAL *s;
-	    int code=bitstream.getbits(codelength[RS][i]);
+	    int code=getbits(codelength[RS][i]);
 
 	    code+=code<<1;
 	    s=group[RS][i]+code;
@@ -650,11 +650,11 @@ void Mpegtoraw::extractlayer2(void)
 	  else
 	  {
 	    fraction[RS][0][i]=
-	      REAL(bitstream.getbits(codelength[RS][i]))*factor[RS][i]-1.0;
+	      REAL(getbits(codelength[RS][i]))*factor[RS][i]-1.0;
 	    fraction[RS][1][i]=
-	      REAL(bitstream.getbits(codelength[RS][i]))*factor[RS][i]-1.0;
+	      REAL(getbits(codelength[RS][i]))*factor[RS][i]-1.0;
 	    fraction[RS][2][i]=
-	      REAL(bitstream.getbits(codelength[RS][i]))*factor[RS][i]-1.0;
+	      REAL(getbits(codelength[RS][i]))*factor[RS][i]-1.0;
 	  }
 	}
 	else fraction[RS][0][i]=fraction[RS][1][i]=fraction[RS][2][i]=0.0;
@@ -667,7 +667,7 @@ void Mpegtoraw::extractlayer2(void)
 	  if(group[LS][i])
 	  {
 	    register const REAL *s;
-	    int code=bitstream.getbits(codelength[LS][i]);
+	    int code=getbits(codelength[LS][i]);
 
 	    code+=code<<1;
 	    s=group[LS][i]+code;
@@ -679,11 +679,11 @@ void Mpegtoraw::extractlayer2(void)
 	  else
 	  {
 	    fraction[LS][0][i]=fraction[RS][0][i]=
-	      REAL(bitstream.getbits(codelength[LS][i]))*factor[LS][i]-1.0;
+	      REAL(getbits(codelength[LS][i]))*factor[LS][i]-1.0;
 	    fraction[LS][1][i]=fraction[RS][1][i]=
-	      REAL(bitstream.getbits(codelength[LS][i]))*factor[LS][i]-1.0;
+	      REAL(getbits(codelength[LS][i]))*factor[LS][i]-1.0;
 	    fraction[LS][2][i]=fraction[RS][2][i]=
-	      REAL(bitstream.getbits(codelength[LS][i]))*factor[LS][i]-1.0;
+	      REAL(getbits(codelength[LS][i]))*factor[LS][i]-1.0;
 	  }
 	}
 	else fraction[LS][0][i]=fraction[LS][1][i]=fraction[LS][2][i]=

@@ -10,16 +10,8 @@
 /* Inlcude default library packages */
 /************************************/
 #include <stdio.h>
-
-#ifdef PTHREADEDMPEG
-#ifdef HAVE_PTHREAD_H
-#include <pthread.h>
-#else
-#ifdef HAVE_PTHREAD_MIT_PTHREAD_H
-#include <pthread/mit/pthread.h>
-#endif
-#endif
-#endif
+#include <stdint.h>
+#include <limits.h>
 
 #ifdef ALSA
 #include <alsa/asoundlib.h>
@@ -59,8 +51,6 @@
 #define SOUND_ERROR_MEMORYNOTENOUGH  15
 #define SOUND_ERROR_EOF              16
 #define SOUND_ERROR_BAD              17
-
-#define SOUND_ERROR_THREADFAIL       18
 
 #define SOUND_ERROR_UNKNOWN          19
 
@@ -141,83 +131,98 @@ typedef struct
   const unsigned int (*val)[2];
 }HUFFMANCODETABLE;
 
+class Bitstream
+{
+private:
+  unsigned int prefetched_bits, prefetched_count, prefetched_size;
+protected:
+  unsigned char * buffer;
+  uint16_t byteoffset, freeoffset;
+  unsigned int bitoffset;
+public:
+  Bitstream() : buffer(new unsigned char[USHRT_MAX]), byteoffset(0), bitoffset(0), freeoffset(0) {};
+  inline unsigned int getavailable() const
+  {
+    return freeoffset >= byteoffset 
+           ? freeoffset - byteoffset 
+           : USHRT_MAX - byteoffset - freeoffset;
+  }
+  inline void bytealign(void) { if (bitoffset) { ++byteoffset; bitoffset = 0; } };
+  inline unsigned int getalignedbyte() {
+    return buffer[byteoffset++];
+  };
+  unsigned int getbits(unsigned int bits) {
+    register int a = buffer[byteoffset] & (0xff >> bitoffset);
+    if (bits >= 8)
+    {
+      a = (a << 8) | buffer[++byteoffset];
+      if (bits >= 16)
+      {
+        a = (a << 8) | buffer[++byteoffset];
+        if (bits >= 24)
+          a = (a << 8) | buffer[++byteoffset];
+      }
+    }
+    if (bitoffset + (bits & 7) >= 8)
+      a = (a << 8 ) | buffer[++byteoffset];
+
+    bitoffset = (bits + bitoffset) & 7;
+    return a >> (8-bitoffset);
+  };
+  inline unsigned int getbit() {
+    if (++bitoffset == 8) {
+      bitoffset = 0;
+      return buffer[byteoffset++] & 1;
+    }
+    else return (buffer[byteoffset] & (1 << 8-bitoffset)) ? 1 : 0;
+  };
+  inline bool isbytealigned() { return bitoffset == 0; };
+  inline void prefetch(unsigned int count, unsigned int size) {
+    prefetched_size = size;
+    prefetched_count = count;
+    prefetched_bits = getbits(size * count);
+  };
+  inline unsigned int fetch() {
+    return (prefetched_bits >> (--prefetched_count * prefetched_size)) & ~(0xffffffff << prefetched_size);
+  };
+};
+
 /*********************************/
 /* Sound input interface classes */
 /*********************************/
 // Superclass for Inputbitstream // Yet, Temporary
 class Soundinputstream
 {
-public:
-  Soundinputstream();
-  virtual ~Soundinputstream();
-
-  static Soundinputstream *hopen(const char *filename,int *errcode);
-
-  int geterrorcode(void)  {return __errorcode;};
-
-  virtual bool open(const char *filename)              =0;
-  virtual int  getbytedirect(void)               =0;
-  virtual bool _readbuffer(unsigned char *buffer,int size)=0;
-  virtual bool eof(void)                         =0;
-  virtual int  getblock(char *buffer,int size)   =0;
-
-  virtual int  getsize(void)                     =0;
-  virtual int  getposition(void)                 =0;
-  virtual void setposition(int pos)              =0;
-
 protected:
-  void seterrorcode(int errorcode) {__errorcode=errorcode;};
+  FILE *_fp;
+public:
+  Soundinputstream() : _fp(NULL) {};
+  virtual ~Soundinputstream() { if (_fp) fclose(_fp); };
 
-private:
-  int __errorcode;
+  virtual bool open(const char *filename) = 0;
+  bool eof(void)
+    { return feof(_fp); };
+  size_t read(unsigned char *buffer, size_t size)
+    { return fread(buffer, 1, size, _fp); };
+  void skip(size_t len) { fseek(_fp, len, SEEK_CUR); };
 };
 
 // Inputstream from file
 class Soundinputstreamfromfile : public Soundinputstream
 {
 public:
-  Soundinputstreamfromfile()  {fp=NULL;};
-  ~Soundinputstreamfromfile();
-
   bool open(const char *filename);
-  bool _readbuffer(unsigned char *buffer,int bytes);
-  int  getbytedirect(void);
-  bool eof(void);
-  int  getblock(char *buffer,int size);
-
-  int  getsize(void);
-  int  getposition(void);
-  void setposition(int pos);
-
-private:
-  FILE *fp;
-  int  size;
 };
 
 // Inputstream from http
 class Soundinputstreamfromhttp : public Soundinputstream
 {
 public:
-  Soundinputstreamfromhttp();
-  ~Soundinputstreamfromhttp();
-
   bool open(const char *filename);
-  bool _readbuffer(unsigned char *buffer,int bytes);
-  int  getbytedirect(void);
-  bool eof(void);
-  int  getblock(char *buffer,int size);
-
-  int  getsize(void);
-  int  getposition(void);
-  void setposition(int pos);
 
 private:
-  FILE *fp;
-  int  size;
-
   bool writestring(int fd,char *string);
   bool readstring(char *string,int maxlen,FILE *f);
-  FILE *http_open(const char *url);
 };
 
 
@@ -326,106 +331,31 @@ private:
 /* Data format converter classes */
 /*********************************/
 // Class for Mpeg layer3
-/*
-class Mpegbitwindow
-{
-public:
-  Mpegbitwindow(){bitindex=point=0;};
-
-  void initialize(void)  {bitindex=point=0;};
-  int  gettotalbit(void) const {return bitindex;};
-  void putbyte(int c)    {buffer[point&(WINDOWSIZE-1)]=c;point++;};
-  void wrap(void);
-  void rewind(int bits)  {bitindex-=bits;};
-  void forward(int bits) {bitindex+=bits;};
-  int  getbit(void);
-  int  getbits9(int bits);
-  int  getbits(int bits);
-
-private:
-  int  point,bitindex;
-  char buffer[2*WINDOWSIZE];
-};
-*/
-
-class Bitstream
-{
-private:
-  unsigned int prefetched_bits, prefetched_count, prefetched_size;
-protected:
-  unsigned int bitoffset;
-  unsigned char buffer[4096], * pbits;
-public:
-  Bitstream() : bitoffset(0), pbits(buffer) {};
-  inline void sync(void) { if (bitoffset) { ++pbits; bitoffset = 0; } };
-  inline bool fillbuffer(int size, Soundinputstream * loader)
-    { bitoffset = 0; pbits = buffer; return loader->_readbuffer(buffer, size);};
-  inline unsigned int getbyte() {
-    return *pbits++;
-  };
-  unsigned int getbits(unsigned int bits) {
-    register int a = *pbits & (0xff >> bitoffset);
-    if (bits >= 8)
-    {
-      a = (a << 8) | *++pbits;
-      if (bits >= 16)
-      {
-        a = (a << 8) | *++pbits;
-        if (bits >= 24)
-          a = (a << 8) | *++pbits;
-      }
-    }
-    if (bitoffset + (bits & 7) >= 8)
-      a = (a << 8 ) | *++pbits;
-
-    bitoffset = (bits + bitoffset) & 7;
-    return a >> (8-bitoffset);
-  };
-  inline unsigned int getbit() {
-    if (++bitoffset == 8) {
-      bitoffset = 0;
-      return *pbits++ & 1;
-    }
-    else return (*pbits & (1 << 8-bitoffset)) ? 1 : 0;
-  };
-  inline bool issync() { return bitoffset == 0; };
-  inline void prefetch(unsigned int count, unsigned int size) {
-    prefetched_size = size;
-    prefetched_count = count;
-    prefetched_bits = getbits(size * count);
-  };
-  inline unsigned int fetch() {
-    return (prefetched_bits >> (--prefetched_count * prefetched_size)) & ~(0xffffffff << prefetched_size);
-  };
-};
-
 class Mpegbitwindow : public Bitstream
 {
-  unsigned char buffer[2*WINDOWSIZE];
   unsigned int point;
 public:
-  Mpegbitwindow() { pbits = buffer; bitoffset = 0; point = 0; };
-
-  void initialize(void) { pbits = buffer; bitoffset = 0; point = 0; };
-  int  gettotalbit(void) const {return ((pbits - buffer) << 3) + bitoffset; };
+  Mpegbitwindow() : point(0) {};
+  void initialize(void) { byteoffset = 0; bitoffset = 0; point = 0; };
+  int  gettotalbit(void) const {return (byteoffset << 3) + bitoffset; };
   void putbyte(int c) { buffer[point & (WINDOWSIZE - 1)] = c; point++; };
   void wrap(void)
   {
     point &= (WINDOWSIZE - 1);
-    if((pbits - buffer) >= point)
+    if (byteoffset >= point)
     {
       for (register int i = 4; i < point; i++)
         buffer[WINDOWSIZE + i]=buffer[i];
     }
     *((int *)(buffer+WINDOWSIZE))=*((int *)buffer);
   }
-  void rewind(int bits) { pbits -= (bits >> 3); if ((bits & 7) > bitoffset) { bitoffset += 8; --pbits; } bitoffset -= (bits & 7); };
-  void forward(int bits) { pbits += (bits >> 3); bitoffset += (bits & 7); if (bitoffset >= 8) { bitoffset -=8; ++pbits; } };
+  void rewind(int bits) { byteoffset -= (bits >> 3); if ((bits & 7) > bitoffset) { bitoffset += 8; --byteoffset; } bitoffset -= (bits & 7); };
+  void forward(int bits) { byteoffset += (bits >> 3); bitoffset += (bits & 7); if (bitoffset >= 8) { bitoffset -=8; ++byteoffset; } };
   inline unsigned int getbits9(int bits) { return getbits(bits); };
 };
 
 // Class for converting mpeg format to raw format
-class Mpegtoraw
+class Mpegtoraw : Bitstream
 {
   /*****************************/
   /* Constant tables for layer */
@@ -484,23 +414,21 @@ public:
   /* Frame management variables */
   /******************************/
 private:
-  int currentframe,totalframe;
+  int currentframe;
   int decodeframe;
-  int *frameoffsets;
 
   /******************************/
   /* Frame management functions */
   /******************************/
 public:
   int  getcurrentframe(void) const {return currentframe;};
-  int  gettotalframe(void)   const {return totalframe;};
   void setframe(int framenumber);
 
   /***************************************/
   /* Variables made by MPEG-Audio header */
   /***************************************/
 private:
-  int tableindex,channelbitrate;
+  int tableindex;
   int stereobound,subbandnumber,inputstereo,outputstereo;
   REAL scalefactor;
   int framesize;
@@ -525,8 +453,9 @@ private:
   /*****************************/
 private:
   Soundinputstream *loader;   // Interface
+  void preload(size_t size);
+  void skip(size_t len);
 
-  Bitstream bitstream;
   /********************/
   /* Global variables */
   /********************/
@@ -546,7 +475,7 @@ private:
   /* Decoding functions for each layer */
   /*************************************/
 private:
-  bool loadheader(void);
+  bool loadframe(void);
 
   //
   // Subbandsynthesis
@@ -603,42 +532,6 @@ private:
   void clearrawdata(void)    {rawdataoffset=0;};
   void putraw(short int pcm) {rawdata[rawdataoffset++]=pcm;};
   void flushrawdata(void);
-
-  /***************************/
-  /* Interface for threading */
-  /***************************/
-#ifdef PTHREADEDMPEG
-private:
-  struct
-  {
-    short int *buffer;
-    int framenumber,frametail;
-    int head,tail;
-    int *sizes;
-  }threadqueue;
-
-  struct
-  {
-    bool thread;
-    bool quit,done;
-    bool pause;
-    bool criticallock,criticalflag;
-  }threadflags;
-
-  pthread_t thread;
-
-public:
-  void threadedplayer(void);
-  bool makethreadedplayer(int framenumbers);
-  void freethreadedplayer(void);
-
-  void stopthreadedplayer(void);
-  void pausethreadedplayer(void);
-  void unpausethreadedplayer(void);
-
-  bool existthread(void);
-  int  getframesaved(void);
-#endif
 };
 
 
@@ -658,10 +551,7 @@ public:
   void setoutput(Soundplayer * p) { player = p; };
   virtual bool openfile(const char *filename)=0;
   virtual void setforcetomono(bool flag)            =0;
-  virtual bool playing(int verbose,bool frameinfo, int startframe)                 =0;
-#ifdef PTHREADEDMPEG
-  virtual bool playingwiththread(int verbose,bool frameinfo,int framenumbers, int startframe) =0;
-#endif
+  virtual bool playing(int verbose) = 0;
   void abort() { _abort_flag = true; }
 
 protected:
@@ -684,10 +574,7 @@ public:
   bool openfile(const char *filename);
   void setforcetomono(bool flag);
   void setdownfrequency(int value);
-  bool playing(int verbose, bool frameinfo, int startframe);
-#ifdef PTHREADEDMPEG
-  bool playingwiththread(int verbose,bool frameinfo,int framenumbers, int startframe);
-#endif
+  bool playing(int verbose);
 
 private:
   Soundinputstream *loader;

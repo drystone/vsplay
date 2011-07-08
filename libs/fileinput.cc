@@ -9,85 +9,17 @@
 #include "config.h"
 #endif
 
-#include <sys/stat.h>
 #include <unistd.h>
 
 #include "mpegsound.h"
 
-/************************/
-/* Input bitstrem class */
-/************************/
-Soundinputstreamfromfile::~Soundinputstreamfromfile()
-{
-  if(fp)fclose(fp);
-}
-
 bool Soundinputstreamfromfile::open(const char *filename)
 {
-  struct stat buf;
-
   if (!strcmp(filename, "-"))
-  {
-    fp = stdin;
-    size = 0;
-    return true;
-  }
-  else if((fp=fopen(filename,"r"))==NULL)
-  {
-    seterrorcode(SOUND_ERROR_FILEOPENFAIL);
-    return false;
-  }
-
-  stat(filename,&buf);
-  size=buf.st_size;
-
-  return true;
-}
-
-int Soundinputstreamfromfile::getbytedirect(void)
-{
-  int c;
-
-  if((c=getc(fp))<0)
-    seterrorcode(SOUND_ERROR_FILEREADFAIL);
-
-  return c;
-}
-
-bool Soundinputstreamfromfile::_readbuffer(unsigned char *buffer,int size)
-{
-  if(fread(buffer,size,1,fp)!=1)
-  {
-    seterrorcode(SOUND_ERROR_FILEREADFAIL);
-    return false;
-  }
-  return true;
-}
-
-bool Soundinputstreamfromfile::eof(void)
-{
-  return feof(fp);
-};
-
-int Soundinputstreamfromfile::getblock(char *buffer,int size)
-{
-  return fread(buffer,1,size,fp);
-}
-
-int Soundinputstreamfromfile::getsize(void)
-{
-  return size;
-}
-
-void Soundinputstreamfromfile::setposition(int pos)
-{
-  if(fp==stdin)return;
-  fseek(fp,pos,SEEK_SET);
-}
-
-int  Soundinputstreamfromfile::getposition(void)
-{
-  if(fp==stdin)return 0;
-  return ftell(fp);
+    _fp = stdin;
+  else
+    _fp = fopen(filename, "r");
+  
+  return _fp != NULL;
 }
 

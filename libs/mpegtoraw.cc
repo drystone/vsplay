@@ -23,7 +23,6 @@
 Mpegtoraw::Mpegtoraw(Soundinputstream *loader,Soundplayer *player)
 {
   __errorcode=SOUND_ERROR_OK;
-  frameoffsets=NULL;
 
   forcetomonoflag=false;
   downfrequency=0;
@@ -34,7 +33,6 @@ Mpegtoraw::Mpegtoraw(Soundinputstream *loader,Soundplayer *player)
 
 Mpegtoraw::~Mpegtoraw()
 {
-  if(frameoffsets)delete [] frameoffsets;
 }
 
 void Mpegtoraw::setforcetomono(bool flag)
@@ -77,29 +75,33 @@ int  Mpegtoraw::getpcmperframe(void)
   return s;
 }
 
+void Mpegtoraw::preload(size_t len)
+{
+  if (getavailable() < len)
+  {
+    size_t bytes = loader->read(&buffer[freeoffset], 4096);
+    freeoffset += bytes;
+  }
+}
+
+void Mpegtoraw::skip(size_t len)
+{
+  unsigned int available = getavailable();
+  if (available >= len)
+    byteoffset += len;
+  else
+  {
+    byteoffset += available;
+    loader->skip(len - available);
+  }
+}
+
 inline void Mpegtoraw::flushrawdata(void)
 {
   player->putblock((char *)rawdata,rawdataoffset<<1);
   currentframe++;
   rawdataoffset=0;
 };
-
-inline void stripfilename(char *dtr,char *str,int max)
-{
-  char *ss;
-  int p=0,s=0;
-
-  for(;str[p];p++)
-    if(str[p]=='/')
-    {
-      p++;
-      s=p;
-    }
-
-  ss=str+s;
-  for(p=0;p<max && ss[p];p++)dtr[p]=ss[p];
-  dtr[p]=0;
-}
 
 // Convert mpeg to raw
 // Mpeg headder class
@@ -134,58 +136,7 @@ void Mpegtoraw::initialize()
   layer3initialize();
 
   currentframe=decodeframe=0;
-  if(loadheader())
-  {
-    totalframe=(loader->getsize()+framesize-1)/framesize;
-    loader->setposition(0);
-  }
-  else totalframe=0;
-
-
-  if(frameoffsets)delete [] frameoffsets;
-
-  if(totalframe>0)
-  {
-    frameoffsets=new int[totalframe];
-    for(i=totalframe-1;i>=0;i--)
-      frameoffsets[i]=0;
-  }
-  else frameoffsets=NULL;
 };
-
-void Mpegtoraw::setframe(int framenumber)
-{
-  int pos=0;
-
-  if(frameoffsets==NULL)return;
-  if(framenumber==0)pos=frameoffsets[0];
-  else
-  {
-    if(framenumber>=totalframe)framenumber=totalframe-1;
-    pos=frameoffsets[framenumber];
-    if(pos==0)
-    {
-      int i;
-
-      for(i=framenumber-1;i>0;i--)
-	if(frameoffsets[i]!=0)break;
-
-      loader->setposition(frameoffsets[i]);
-
-      while(i<framenumber)
-      {
-	loadheader();
-	i++;
-	frameoffsets[i]=loader->getposition();
-      }
-      pos=frameoffsets[framenumber];
-    }
-  }
-
-  clearbuffer();
-  loader->setposition(pos);
-  decodeframe=currentframe=framenumber;
-}
 
 void Mpegtoraw::clearbuffer(void)
 {
@@ -193,160 +144,152 @@ void Mpegtoraw::clearbuffer(void)
   player->resetsoundtype();
 }
 
-bool Mpegtoraw::loadheader(void)
+bool Mpegtoraw::loadframe(void)
 {
-  register int c;
-  bool flag;
+  bytealign();
 
-  bitstream.sync();
+  preload(4);
+  // find frame start
+  unsigned int header = (getalignedbyte() << 24)
+                      + (getalignedbyte() << 16)
+                      + (getalignedbyte() << 8)
+                      + getalignedbyte();
 
-// Synchronize
-  flag=false;
-  do
+  while ((header & 0xfff00000) != 0xfff00000)
   {
-
-    if((c=loader->getbytedirect())<0)break;
-
-    if(c==0xff) {
-      while(!flag)
+    // skip over if ID3 tag
+    if (header >> 24 == 'I'
+     && (header >> 16 & 0xff) == 'D'
+     && (header >> 8 & 0xff) == '3'
+     && (header & 0xff) != 0xff)
+    {
+      preload(6);
+      for (unsigned int i = 0; i < 6; i++)
       {
-	if((c=loader->getbytedirect())<0)
-	{
-	  flag=true;
-	  break;
-	}
-	if((c&0xf0)==0xf0)
-	{
-	  flag=true;
-	  break;
-	}
-	else if(c!=0xff)break;
+        header = (header << 8) + getalignedbyte();
+        if ((header & 0xff) == 0xff)
+          break;
       }
+      if ((header & 0xff) == 0xff)
+        continue;
+
+      size_t len = ((header >> 3) & (0x7f << 21)) 
+                 + ((header >> 2) & (0x7f << 14))
+                 + ((header >> 1) & (0x7f << 7))
+                 + (header & 0x7f );
+
+      skip(len);
+ 
+      preload(4);
+      header = (getalignedbyte() << 24)
+             + (getalignedbyte() << 16)
+             + (getalignedbyte() << 8)
+             + (getalignedbyte());
     }
-    else if (c=='I') { // possible ID3v2 tag
-        unsigned char buf[10];
-        int c2,c3;
-        int length;
-
-        if((c2=loader->getbytedirect())<0) break;
-        if (c2=='D') {
-            if((c3=loader->getbytedirect())<0) break;
-            if(c3=='3') {
-                  // OK, found ID3v2 tag.
-                if (!loader->_readbuffer(buf,7)) break;
-                
-                  // Compute number of bytes to skip
-                length=((buf[3]&0x7f)<<21) + ((buf[4]&0x7f)<<14) +
-                    ((buf[5]&0x7f)<<7) + (buf[6]&0x7f);
-                
-       //printf("Found ID3v2 tag; skipping %d bytes\n",length);
-                while (length-->0) {
-                    if(loader->getbytedirect()<0) {
-                        break;
-                    }
-                }
-            }
-        }
+    else
+    {
+      preload(1);
+      header = (header << 8) + getalignedbyte();
     }
-    //else {
-    //    printf("garbage character: %02x\n",c);
-    //}
-  }while(!flag);
+  } 
 
-  if(c<0)return seterrorcode(SOUND_ERROR_FINISH);
+  // deconstruct header
+  version = (header & 0x00080000) ? mpeg1 : mpeg2;
+  layer = 4 - (header >> 17) & 3;
+  protection = (header & 0x00010000) ? false : true;
+  bitrateindex = (header >> 12) & 0xf;
+  if (bitrateindex == 15)
+    return seterrorcode(SOUND_ERROR_BAD);
+  frequency=(_frequency)((header >> 10) & 3);
+  padding = (header & 0x00000200) ? true : false;
+  mode = (_mode)((header >> 6) & 3);
+  extendedmode = (header >> 4) & 3;
 
+  // Making information
+  inputstereo = (mode == single) ? 0 : 1;
+  outputstereo = forcetomonoflag ? 0 : inputstereo;
 
+  int cbi = bitrateindex; // channel bitrate index
+  if (inputstereo)
+    cbi = (cbi == 4) ? 1 : cbi - 4;
 
-// Analyzing
-  c&=0xf;
-  protection=c&1;
-  layer=4-((c>>1)&3);
-  version=(_mpegversion)((c>>3)^1);
+  tableindex = 1;
+  if (cbi == 1 || cbi == 2)
+    tableindex = 0;
 
-  c=((loader->getbytedirect()))>>1;
-  padding=(c&1);             c>>=1;
-  frequency=(_frequency)(c&3); c>>=2;
-  bitrateindex=(int)c;
-  if(bitrateindex==15)return seterrorcode(SOUND_ERROR_BAD);
-
-  c=((unsigned int)(loader->getbytedirect()))>>4;
-  extendedmode=c&3;
-  mode=(_mode)(c>>2);
-
-
-// Making information
-  inputstereo= (mode==single)?0:1;
-  if(forcetomonoflag)outputstereo=0; else outputstereo=inputstereo;
-
-  /*  if(layer==2)
-    if((bitrateindex>=1 && bitrateindex<=3) || (bitrateindex==5)) {
-      if(inputstereo)return seterrorcode(SOUND_ERROR_BAD); }
-    else if(bitrateindex==11 && mode==single)
-    return seterrorcode(SOUND_ERROR_BAD); */
-
-  channelbitrate=bitrateindex;
-  if(inputstereo)
-    if(channelbitrate==4)channelbitrate=1;
-    else channelbitrate-=4;
-
-  if(channelbitrate==1 || channelbitrate==2)tableindex=0; else tableindex=1;
-
-  if(layer==1)subbandnumber=MAXSUBBAND;
+  if (layer == 1)
+    subbandnumber = MAXSUBBAND;
   else
   {
-    if(!tableindex)
-      if(frequency==frequency32000)subbandnumber=12; else subbandnumber=8;
-    else if(frequency==frequency48000||
-	    (channelbitrate>=3 && channelbitrate<=5))
-      subbandnumber=27;
-    else subbandnumber=30;
+    if (!tableindex)
+      subbandnumber = (frequency == frequency32000) ? 12 : 8;
+    else
+      subbandnumber = 
+        (frequency == frequency48000 || (cbi >= 3 && cbi <= 5))
+        ? 27 : 30;
   }
 
-  if(mode==single)stereobound=0;
-  else if(mode==joint)stereobound=(extendedmode+1)<<2;
-  else stereobound=subbandnumber;
-
-  if(stereobound>subbandnumber)stereobound=subbandnumber;
+  stereobound = subbandnumber;
+  if (mode == single)
+    stereobound = 0;
+  else if (mode == joint)
+  {
+    stereobound = (extendedmode + 1) << 2;
+    if (stereobound > subbandnumber)
+      stereobound = subbandnumber;
+  }
 
   // framesize & slots
-  if(layer==1)
+  if (layer == 1)
   {
-    framesize=(12000*bitrate[version][0][bitrateindex])/
-              frequencies[version][frequency];
-    if(frequency==frequency44100 && padding)framesize++;
-    framesize<<=2;
+    framesize = 12000 * bitrate[version][0][bitrateindex]
+                / frequencies[version][frequency];
+    if (frequency == frequency44100 && padding)
+      framesize++;
+    framesize <<= 2;
   }
   else
   {
-    framesize=(144000*bitrate[version][layer-1][bitrateindex])/
-      (frequencies[version][frequency]<<version);
-    if(padding)framesize++;
-    if(layer==3)
+    framesize = 144000 * bitrate[version][layer-1][bitrateindex]
+                / (frequencies[version][frequency] << version);
+    if (padding)
+      framesize++;
+    if (layer == 3)
     {
-      if(version)
-	layer3slots=framesize-((mode==single)?9:17)
-	                     -(protection?0:2)
-	                     -4;
+      layer3slots = framesize - (protection ? 2 : 0) - 4;
+      if (version == mpeg2)
+	layer3slots -= (mode == single) ? 9 : 17;
       else
-	layer3slots=framesize-((mode==single)?17:32)
-	                     -(protection?0:2)
-	                     -4;
+	layer3slots -= (mode == single) ? 17 : 32;
     }
   }
 
-  if(!bitstream.fillbuffer(framesize-4, loader))seterrorcode(SOUND_ERROR_FILEREADFAIL);
+  preload(framesize - 4);
 
-  if(!protection)
-  {
-    bitstream.getbyte();                      // CRC, Not check!!
-    bitstream.getbyte();
-  }
+  if (protection) skip(2);
 
-
-  if(loader->eof())return seterrorcode(SOUND_ERROR_FINISH);
+  if (loader->eof())
+    return seterrorcode(SOUND_ERROR_FINISH);
 
   return true;
 }
+/*
+newrun
+
+while 1
+  if (input.space)
+    source.read()
+  if (outbuf.length)
+    device.write()
+  while (input.length and output.space)
+    decodeframe()
+    if (source.blocked and device.blocked)
+      select(0)
+    if (!source.blocked or !device.blocked)
+      break
+  if (source.blocked and device.blocked)
+    select(-1)
+*/
 
 // Convert mpeg to raw
 bool Mpegtoraw::run(int frames)
@@ -356,19 +299,14 @@ bool Mpegtoraw::run(int frames)
 
   for(;frames;frames--)
   {
-    if(totalframe>0)
-    {
-      if(decodeframe<totalframe)
-	frameoffsets[decodeframe]=loader->getposition();
-    }
-
     if(loader->eof())
     {
       seterrorcode(SOUND_ERROR_FINISH);
       player->drain();
       break;
     }
-    if(loadheader()==false)break;
+    if (loadframe() == false)
+      break;
 
     if(frequency!=lastfrequency)
     {
