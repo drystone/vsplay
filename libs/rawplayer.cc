@@ -63,7 +63,7 @@ void Rawplayer::initialize(const char *filename) throw (Vsplayexception)
     throw Vsplayexception(SOUND_ERROR_DEVOPENFAIL);
 }
 
-void Rawplayer::abort(void)
+void Rawplayer::stop(void)
 {
   int a;
 

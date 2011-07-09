@@ -25,6 +25,7 @@ Mpegtoraw::Mpegtoraw(Soundinputstream *l, Soundplayer *p)
   , downfrequency(0)
   , loader(l)
   , player(p)
+  , _abort_flag(false)
 {
   register int i;
   register REAL *s1,*s2;
@@ -77,6 +78,8 @@ void Mpegtoraw::preload(size_t len)
     size_t bytes = loader->read(&buffer[freeoffset], 4096);
     freeoffset += bytes;
   }
+  if (getavailable() < len)
+    throw Vsplayexception(SOUND_ERROR_EOF);
 }
 
 void Mpegtoraw::skip(size_t len)
@@ -235,40 +238,46 @@ while 1
 */
 
 // Convert mpeg to raw
-void Mpegtoraw::run(int frames)
+void Mpegtoraw::run(int verbose)
   throw (Vsplayexception)
 {
-  clearrawdata();
-  if(frames<0)lastfrequency=0;
-
-  for(;frames;frames--)
+  static const char * modestr[] = {"stereo", "joint stereo", "dual channel", "mono"};
+  loadframe();
+  player->setsoundtype(outputstereo, 16, frequencies[version][frequency] >> downfrequency);
+  if (verbose > 2)
+    std::cout << "MPEG-" << (version + 1) << " Layer " << layer << ", " 
+              << modestr[mode] << std::endl
+              << frequencies[version][frequency] << (downfrequency ? "Hz/2, " : "Hz, ")
+              << bitrate[version][layer-1][bitrateindex] << "kbit/s, "
+              << (protection ? "with" : "without") << " crc check" << std::endl;
+  
+  while (!_abort_flag)
   {
-    if(loader->eof())
-    {
-      player->drain();
-      return;
-    }
-    loadframe();
-
-    if(frequency!=lastfrequency)
-    {
-      if(lastfrequency>0)
-        throw Vsplayexception(SOUND_ERROR_BAD);
-
-      lastfrequency=frequency;
-    }
-    if(frames<0)
-    {
-      frames=-frames;
-      player->setsoundtype( outputstereo, 16,
-        frequencies[version][frequency] >> downfrequency);
-    }
-
-    if     (layer==3)extractlayer3();
-    else if(layer==2)extractlayer2();
-    else if(layer==1)extractlayer1();
-
-    player->putblock((char *)rawdata,rawdataoffset<<1);
     rawdataoffset = 0;
+    if (layer == 3) extractlayer3();
+    else if (layer == 2) extractlayer2();
+    else if (layer == 1) extractlayer1();
+
+    player->putblock((char *)rawdata, rawdataoffset << 1);
+
+    _frequency f = frequency;
+    try
+    {
+      loadframe();
+    }
+    catch (Vsplayexception &e)
+    {
+      if (e.error == SOUND_ERROR_EOF)
+        break;
+      throw e;
+    }
+    if(frequency != f)
+      throw Vsplayexception(SOUND_ERROR_BAD);
   }
+  // TODO cant abort if player is draining
+  if (!_abort_flag)
+    player->drain();
+  else
+    player->stop();
 }
+

@@ -46,7 +46,6 @@ inline int alsa_throw(int result) throw(Alsa_error) {
 Rawplayeralsa::Rawplayeralsa()
       : _device_handle(0)
       , _hw_params(0)
-      , _abort_flag(false)
 {
 }
   
@@ -77,7 +76,6 @@ void Rawplayeralsa::setsoundtype(int stereo, int samplesize, int speed)
 {
     snd_pcm_format_t format = (samplesize == 16) ? SND_PCM_FORMAT_S16_LE : SND_PCM_FORMAT_UNKNOWN;
     int channels = stereo ? 2 : 1;
-    _abort_flag = false;
 
     _framesize = channels << 1;
     try
@@ -99,7 +97,7 @@ void Rawplayeralsa::putblock(void *buffer, int size)
   throw (Vsplayexception)
 {
     snd_pcm_uframes_t frames = size / _framesize;
-    while (frames && !_abort_flag)
+    while (frames)
     {
         try {
             if (alsa_throw(snd_pcm_wait(_device_handle, 100)))
@@ -123,13 +121,6 @@ void Rawplayeralsa::putblock(void *buffer, int size)
             };
         }
     }
-}
-
-void
-Rawplayeralsa::abort(void)
-{
-    snd_pcm_drop(_device_handle);
-    _abort_flag = true;
 }
 
 #endif // ALSA

@@ -13,25 +13,6 @@
 #include <math.h>
 #include "mpegsound.h"
 
-// File player superclass
-Fileplayer::Fileplayer()
-  : player(NULL)
-  , _abort_flag(false)
-{
-}
-
-Fileplayer::~Fileplayer()
-{
-}
-
-// Mpegfileplayer
-Mpegfileplayer::Mpegfileplayer()
-  : Fileplayer()
-  , loader(NULL)
-  , server(NULL)
-{
-}
-
 Mpegfileplayer::~Mpegfileplayer()
 {
   if(loader)delete loader;
@@ -55,8 +36,6 @@ void Mpegfileplayer::openfile(const char *filename)
 
   if((server=new Mpegtoraw(loader,player))==NULL)
     throw Vsplayexception(SOUND_ERROR_MEMORYNOTENOUGH);
-
-  _abort_flag = false;
 }
 
 void Mpegfileplayer::setforcetomono(bool flag)
@@ -72,33 +51,6 @@ void Mpegfileplayer::setdownfrequency(int value)
 void Mpegfileplayer::playing(int verbose)
   throw (Vsplayexception)
 {
-  server->run(-1);
-  if (verbose > 2)
-    showverbose(verbose);
-
-  // Playing
-  while (!loader->eof())
-  {
-    server->run(1);
-    if (_abort_flag)
-    {
-      player->abort();
-      break;
-    }
-  }
-}
-
-void Mpegfileplayer::showverbose(int)
-{
-  static const char *modestring[4]={"stereo","joint stereo","dual channel","mono"};
-
-  fprintf(stderr,"\tMPEG-%d Layer %d, %s,\n\t%dHz%s, %dkbit/s, ",
-	  server->getversion()+1,
-	  server->getlayer(),modestring[server->getmode()],
-	  server->getfrequency(),server->getdownfrequency()?"//2":"",
-	  server->getbitrate());
-  fprintf(stderr,server->getcrccheck() 
-	  ? "with crc check\n" 
-	  : "without crc check\n");
+  server->run(verbose);
 }
 

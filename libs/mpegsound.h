@@ -249,8 +249,8 @@ public:
     throw (Vsplayexception) = 0;
   virtual void resetsoundtype(void)
     throw (Vsplayexception) {};
-  virtual void abort(void) {};
   virtual void drain(void) {};
+  virtual void stop(void) {};
 };
 
 
@@ -278,7 +278,6 @@ public:
 
   void initialize(const char *filename)
     throw (Vsplayexception);
-  void abort(void);
 
   void setsoundtype(int stereo,int samplesize,int speed)
     throw (Vsplayexception);
@@ -293,6 +292,7 @@ public:
   static const char *defaultdevice;
   static int  setvolume(int volume);
   void drain(void) {};
+  void stop();
 
 private:
   short int rawbuffer[RAWDATASIZE];
@@ -316,14 +316,13 @@ public:
     throw (Vsplayexception);
   void putblock(void *buffer,int size)
     throw (Vsplayexception);
-  void abort(void);
   void drain() { snd_pcm_drain(_device_handle); };
+  void stop() { snd_pcm_drop(_device_handle); };
 
 private:
   snd_pcm_t *_device_handle;
   snd_pcm_hw_params_t *_hw_params;
   unsigned int _framesize;
-  bool _abort_flag;
 };
 #endif // ALSA
 
@@ -381,15 +380,8 @@ private:
   /*******************************************/
 public:
   // General
-  int  getversion(void)   const {return version;};
-  int  getlayer(void)     const {return layer;};
-  bool getcrccheck(void)  const {return (!protection);};
   // Stereo or not
-  int  getmode(void)      const {return mode;};
-  bool isstereo(void)     const {return (getmode()!=single);};
   // Frequency and bitrate
-  int  getfrequency(void) const {return frequencies[version][frequency];};
-  int  getbitrate(void)   const {return bitrate[version][layer-1][bitrateindex];};
 
   /***************************************/
   /* Interface for setting music quality */
@@ -422,8 +414,9 @@ private:
   /* Mpegtoraw class */
   /*******************/
 public:
-  Mpegtoraw(Soundinputstream *loader,Soundplayer *player);
+  Mpegtoraw(Soundinputstream *loader, Soundplayer *player);
   void run(int frames) throw (Vsplayexception);
+  void abort() { _abort_flag = true; };
 
   /*****************************/
   /* Loading MPEG-Audio stream */
@@ -432,6 +425,7 @@ private:
   Soundinputstream *loader;   // Interface
   void preload(size_t size);
   void skip(size_t len);
+  bool _abort_flag;
 
   /********************/
   /* Global variables */
@@ -522,8 +516,8 @@ private:
 class Fileplayer
 {
 public:
-  Fileplayer();
-  virtual ~Fileplayer();
+  Fileplayer() : player(NULL) {};
+  virtual ~Fileplayer() {};
 
   void setoutput(Soundplayer * p) { player = p; };
   virtual void openfile(const char *filename)
@@ -531,19 +525,17 @@ public:
   virtual void setforcetomono(bool flag)            =0;
   virtual void  playing(int verbose)
     throw (Vsplayexception) = 0;
-  void abort() { _abort_flag = true; }
+  virtual void abort() = 0;
 
 protected:
   Soundplayer *player;
-  bool _abort_flag;
 };
-
 
 // Class for playing MPEG file
 class Mpegfileplayer : public Fileplayer
 {
 public:
-  Mpegfileplayer();
+  Mpegfileplayer() : Fileplayer(), loader(NULL), server(NULL) {};
   ~Mpegfileplayer();
 
   void openfile(const char *filename)
@@ -552,6 +544,7 @@ public:
   void setdownfrequency(int value);
   void playing(int verbose)
     throw (Vsplayexception);
+  void abort() { server->abort(); };
 
 private:
   Soundinputstream *loader;
