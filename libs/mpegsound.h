@@ -531,9 +531,11 @@ public:
   int geterrorcode(void)        {return __errorcode;};
 
   void setoutput(Soundplayer * p) { player = p; };
-  virtual bool openfile(const char *filename)=0;
+  virtual void openfile(const char *filename)
+    throw (Vsplayexception) = 0;
   virtual void setforcetomono(bool flag)            =0;
-  virtual bool playing(int verbose) = 0;
+  virtual void  playing(int verbose)
+    throw (Vsplayexception) = 0;
   void abort() { _abort_flag = true; }
 
 protected:
@@ -553,10 +555,12 @@ public:
   Mpegfileplayer();
   ~Mpegfileplayer();
 
-  bool openfile(const char *filename);
+  void openfile(const char *filename)
+    throw (Vsplayexception);
   void setforcetomono(bool flag);
   void setdownfrequency(int value);
-  bool playing(int verbose);
+  void playing(int verbose)
+    throw (Vsplayexception);
 
 private:
   Soundinputstream *loader;

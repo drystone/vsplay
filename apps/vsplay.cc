@@ -115,13 +115,14 @@ static void play(const std::string& filename, Soundplayer* device)
   }
 #endif /* TAGLIB */        
   
-  if(!g_player.openfile(filename.c_str()))
-    error(SOUND_ERROR_FILEOPENFAIL);
-  else
+  try
   {
+    g_player.openfile(filename.c_str());
     g_player.playing(g_verbose);
-    if (g_player.geterrorcode() > 0)
-      error(g_player.geterrorcode());
+  }
+  catch (Vsplayexception &e)
+  {
+    error(e.error);
   }
 }
 

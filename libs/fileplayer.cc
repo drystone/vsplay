@@ -39,7 +39,8 @@ Mpegfileplayer::~Mpegfileplayer()
   if(server)delete server;
 }
 
-bool Mpegfileplayer::openfile(const char *filename)
+void Mpegfileplayer::openfile(const char *filename)
+  throw (Vsplayexception)
 {
   if (loader) delete loader;
   if (server) delete server;
@@ -54,10 +55,9 @@ bool Mpegfileplayer::openfile(const char *filename)
   loader->open(filename);
 
   if((server=new Mpegtoraw(loader,player))==NULL)
-    return seterrorcode(SOUND_ERROR_MEMORYNOTENOUGH);
+    throw Vsplayexception(SOUND_ERROR_MEMORYNOTENOUGH);
 
   _abort_flag = false;
-  return true;
 }
 
 void Mpegfileplayer::setforcetomono(bool flag)
@@ -70,12 +70,12 @@ void Mpegfileplayer::setdownfrequency(int value)
   server->setdownfrequency(value);
 };
 
-bool Mpegfileplayer::playing(int verbose)
+void Mpegfileplayer::playing(int verbose)
+  throw (Vsplayexception)
 {
   if(!server->run(-1))
   {       // Initialize MPEG Layer 3
-      seterrorcode(server->geterrorcode());
-      return false;
+      throw Vsplayexception(server->geterrorcode());
   }
   if (verbose > 2)
     showverbose(verbose);
@@ -88,10 +88,6 @@ bool Mpegfileplayer::playing(int verbose)
       break;
     }
   }
-
-  seterrorcode(server->geterrorcode());
-  if(seterrorcode(SOUND_ERROR_FINISH))return true;
-  return false;
 }
 
 void Mpegfileplayer::showverbose(int)
