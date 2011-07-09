@@ -57,7 +57,6 @@ bool Mpegfileplayer::openfile(const char *filename)
     return seterrorcode(SOUND_ERROR_MEMORYNOTENOUGH);
 
   _abort_flag = false;
-  server->initialize();
   return true;
 }
 

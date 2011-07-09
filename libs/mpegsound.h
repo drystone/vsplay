@@ -226,8 +226,7 @@ public:
 class Soundinputstreamfromhttp : public Soundinputstream
 {
 public:
-  void open(const char *filename)
-    throw (Vsplayexception);
+  void open(const char *filename) throw (Vsplayexception);
 };
 
 
@@ -409,17 +408,9 @@ public:
   int  getpcmperframe(void);
 
   /******************************/
-  /* Frame management variables */
-  /******************************/
-private:
-  int currentframe;
-  int decodeframe;
-
-  /******************************/
   /* Frame management functions */
   /******************************/
 public:
-  int  getcurrentframe(void) const {return currentframe;};
   void setframe(int framenumber);
 
   /***************************************/
@@ -436,11 +427,8 @@ private:
   /*******************/
 public:
   Mpegtoraw(Soundinputstream *loader,Soundplayer *player);
-  ~Mpegtoraw();
-  void initialize();
   bool run(int frames);
   int  geterrorcode(void) {return __errorcode;};
-  void clearbuffer(void);
 
 private:
   int __errorcode;

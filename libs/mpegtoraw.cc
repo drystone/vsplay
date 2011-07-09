@@ -20,19 +20,33 @@
 #define MY_PI 3.14159265358979323846
 
 
-Mpegtoraw::Mpegtoraw(Soundinputstream *loader,Soundplayer *player)
+Mpegtoraw::Mpegtoraw(Soundinputstream *l, Soundplayer *p)
+  : forcetomonoflag(false)
+  , downfrequency(0)
+  , loader(l)
+  , player(p)
 {
-  __errorcode=SOUND_ERROR_OK;
+  register int i;
+  register REAL *s1,*s2;
+  REAL *s3,*s4;
 
-  forcetomonoflag=false;
-  downfrequency=0;
+  scalefactor=SCALE;
+  calcbufferoffset=15;
+  currentcalcbuffer=0;
 
-  this->loader=loader;
-  this->player=player;
-}
+  s1=calcbufferL[0];s2=calcbufferR[0];
+  s3=calcbufferL[1];s4=calcbufferR[1];
+  for(i=CALCBUFFERSIZE-1;i>=0;i--)
+    calcbufferL[0][i]=calcbufferL[1][i]=
+    calcbufferR[0][i]=calcbufferR[1][i]=0.0;
 
-Mpegtoraw::~Mpegtoraw()
-{
+  for(i=0;i<16;i++)hcos_64[i]=1.0/(2.0*cos(MY_PI*double(i*2+1)/64.0));
+  for(i=0;i< 8;i++)hcos_32[i]=1.0/(2.0*cos(MY_PI*double(i*2+1)/32.0));
+  for(i=0;i< 4;i++)hcos_16[i]=1.0/(2.0*cos(MY_PI*double(i*2+1)/16.0));
+  for(i=0;i< 2;i++)hcos_8 [i]=1.0/(2.0*cos(MY_PI*double(i*2+1)/ 8.0));
+  hcos_4=1.0/(2.0*cos(MY_PI*1.0/4.0));
+
+  layer3initialize();
 }
 
 void Mpegtoraw::setforcetomono(bool flag)
@@ -99,50 +113,8 @@ void Mpegtoraw::skip(size_t len)
 inline void Mpegtoraw::flushrawdata(void)
 {
   player->putblock((char *)rawdata,rawdataoffset<<1);
-  currentframe++;
   rawdataoffset=0;
 };
-
-// Convert mpeg to raw
-// Mpeg headder class
-void Mpegtoraw::initialize()
-{
-  static bool initialized=false;
-
-  register int i;
-  register REAL *s1,*s2;
-  REAL *s3,*s4;
-
-  scalefactor=SCALE;
-  calcbufferoffset=15;
-  currentcalcbuffer=0;
-
-  s1=calcbufferL[0];s2=calcbufferR[0];
-  s3=calcbufferL[1];s4=calcbufferR[1];
-  for(i=CALCBUFFERSIZE-1;i>=0;i--)
-    calcbufferL[0][i]=calcbufferL[1][i]=
-    calcbufferR[0][i]=calcbufferR[1][i]=0.0;
-
-  if(!initialized)
-  {
-    for(i=0;i<16;i++)hcos_64[i]=1.0/(2.0*cos(MY_PI*double(i*2+1)/64.0));
-    for(i=0;i< 8;i++)hcos_32[i]=1.0/(2.0*cos(MY_PI*double(i*2+1)/32.0));
-    for(i=0;i< 4;i++)hcos_16[i]=1.0/(2.0*cos(MY_PI*double(i*2+1)/16.0));
-    for(i=0;i< 2;i++)hcos_8 [i]=1.0/(2.0*cos(MY_PI*double(i*2+1)/ 8.0));
-    hcos_4=1.0/(2.0*cos(MY_PI*1.0/4.0));
-    initialized=true;
-  }
-
-  layer3initialize();
-
-  currentframe=decodeframe=0;
-};
-
-void Mpegtoraw::clearbuffer(void)
-{
-  player->abort();
-  player->resetsoundtype();
-}
 
 bool Mpegtoraw::loadframe(void)
 {
@@ -327,8 +299,6 @@ bool Mpegtoraw::run(int frames)
           break;
       }
     }
-
-    decodeframe++;
 
     if     (layer==3)extractlayer3();
     else if(layer==2)extractlayer2();
