@@ -321,7 +321,7 @@ bool Mpegtoraw::run(int frames)
         player->setsoundtype( outputstereo, 16,
 		   frequencies[version][frequency] >> downfrequency);
       }
-      catch (Soundplayerexception &e)
+      catch (Vsplayexception &e)
       {
           seterrorcode(e.error);
           break;

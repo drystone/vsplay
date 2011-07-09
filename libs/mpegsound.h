@@ -230,10 +230,10 @@ private:
 /* Sound player interface classes */
 /**********************************/
 // Superclass for player
-struct Soundplayerexception
+struct Vsplayexception
 {
   int error;
-  Soundplayerexception(int e) { error = e; };
+  Vsplayexception(int e) { error = e; };
 };
 
 class Soundplayer
@@ -241,13 +241,13 @@ class Soundplayer
 public:
   virtual ~Soundplayer() {};
   virtual void initialize(const char *filename)
-    throw (Soundplayerexception) = 0;
+    throw (Vsplayexception) = 0;
   virtual void setsoundtype(int stereo, int samplesize, int speed)
-    throw (Soundplayerexception) = 0;
+    throw (Vsplayexception) = 0;
   virtual void putblock(void *buffer,int size)
-    throw (Soundplayerexception) = 0;
+    throw (Vsplayexception) = 0;
   virtual void resetsoundtype(void)
-    throw (Soundplayerexception) {};
+    throw (Vsplayexception) {};
   virtual void abort(void) {};
   virtual void drain(void) {};
 };
@@ -258,11 +258,11 @@ class Rawtofile : public Soundplayer
 public:
   ~Rawtofile();
   void initialize(const char *filename)
-    throw (Soundplayerexception);
+    throw (Vsplayexception);
   void setsoundtype(int stereo,int samplesize,int speed)
-    throw (Soundplayerexception);
+    throw (Vsplayexception);
   void putblock(void *buffer,int size)
-    throw (Soundplayerexception);
+    throw (Vsplayexception);
 
 private:
   int filehandle;
@@ -276,16 +276,16 @@ public:
   ~Rawplayer();
 
   void initialize(const char *filename)
-    throw (Soundplayerexception);
+    throw (Vsplayexception);
   void abort(void);
 
   void setsoundtype(int stereo,int samplesize,int speed)
-    throw (Soundplayerexception);
+    throw (Vsplayexception);
   void resetsoundtype(void)
-    throw (Soundplayerexception);
+    throw (Vsplayexception);
 
   void putblock(void *buffer,int size)
-    throw (Soundplayerexception);
+    throw (Vsplayexception);
 
   int  getblocksize(void);
 
@@ -310,11 +310,11 @@ public:
   ~Rawplayeralsa();
 
   void initialize(const char *filename)
-    throw (Soundplayerexception);
+    throw (Vsplayexception);
   void setsoundtype(int stereo,int samplesize,int speed)
-    throw (Soundplayerexception);
+    throw (Vsplayexception);
   void putblock(void *buffer,int size)
-    throw (Soundplayerexception);
+    throw (Vsplayexception);
   void abort(void);
   void drain() { snd_pcm_drain(_device_handle); };
 

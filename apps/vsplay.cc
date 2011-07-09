@@ -214,7 +214,7 @@ Soundplayer * open_device(const char * devicename, Devicetype devicetype) throw 
   {
     device->initialize(devicename);
   }
-  catch (Soundplayerexception& e)
+  catch (Vsplayexception& e)
   { // initialisation problem
     delete device;
     throw error;

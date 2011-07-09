@@ -57,10 +57,10 @@ Rawplayer::~Rawplayer()
   close(audiohandle);
 }
 
-void Rawplayer::initialize(const char *filename) throw (Soundplayerexception)
+void Rawplayer::initialize(const char *filename) throw (Vsplayexception)
 {
   if ((audiohandle = open(filename, O_WRONLY)) == -1)
-    throw Soundplayerexception(SOUND_ERROR_DEVOPENFAIL);
+    throw Vsplayexception(SOUND_ERROR_DEVOPENFAIL);
 }
 
 void Rawplayer::abort(void)
@@ -71,7 +71,7 @@ void Rawplayer::abort(void)
 }
 
 void Rawplayer::setsoundtype(int stereo, int samplesize, int speed)
-  throw (Soundplayerexception)
+  throw (Vsplayexception)
 {
   rawstereo = stereo;
   rawsamplesize = samplesize;
@@ -82,12 +82,12 @@ void Rawplayer::setsoundtype(int stereo, int samplesize, int speed)
 }
 
 void Rawplayer::resetsoundtype(void)
-  throw (Soundplayerexception)
+  throw (Vsplayexception)
 {
   int tmp;
 
   if (ioctl(audiohandle, SNDCTL_DSP_SYNC, NULL) < 0)
-    throw Soundplayerexception(SOUND_ERROR_DEVCTRLERROR);
+    throw Vsplayexception(SOUND_ERROR_DEVCTRLERROR);
 
 #ifdef SOUND_VERSION
   if (ioctl(audiohandle, SNDCTL_DSP_STEREO, &rawstereo) < 0)
@@ -108,17 +108,17 @@ void Rawplayer::resetsoundtype(void)
       rawsamplesize=8;
       IOCTL(audiohandle,SNDCTL_DSP_SAMPLESIZE,rawsamplesize);
       if(rawsamplesize!=8)
-        throw Soundplayerexception(SOUND_ERROR_DEVCTRLERROR);
+        throw Vsplayexception(SOUND_ERROR_DEVCTRLERROR);
 
       forceto8=true;
     }
 
   if(IOCTL(audiohandle,SNDCTL_DSP_SPEED,rawspeed)<0)
-    throw Soundplayerexception(SOUND_ERROR_DEVCTRLERROR);
+    throw Vsplayexception(SOUND_ERROR_DEVCTRLERROR);
 }
 
 void Rawplayer::putblock(void *buffer, int size)
-  throw (Soundplayerexception)
+  throw (Vsplayexception)
 {
   int modifiedsize = size;
 

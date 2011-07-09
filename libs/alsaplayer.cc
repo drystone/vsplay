@@ -57,7 +57,7 @@ Rawplayeralsa::~Rawplayeralsa()
 }
 
 void Rawplayeralsa::initialize(const char* filename)
-  throw (Soundplayerexception)
+  throw (Vsplayexception)
 {
     try
     {
@@ -68,12 +68,12 @@ void Rawplayeralsa::initialize(const char* filename)
     }
     catch (Alsa_error &e)
     {
-        throw Soundplayerexception(SOUND_ERROR_DEVOPENFAIL);
+        throw Vsplayexception(SOUND_ERROR_DEVOPENFAIL);
     }
 }
 
 void Rawplayeralsa::setsoundtype(int stereo, int samplesize, int speed)
-  throw (Soundplayerexception)
+  throw (Vsplayexception)
 {
     snd_pcm_format_t format = (samplesize == 16) ? SND_PCM_FORMAT_S16_LE : SND_PCM_FORMAT_UNKNOWN;
     int channels = stereo ? 2 : 1;
@@ -91,12 +91,12 @@ void Rawplayeralsa::setsoundtype(int stereo, int samplesize, int speed)
     }
     catch (Alsa_error &e)
     {
-        throw Soundplayerexception(SOUND_ERROR_DEVOPENFAIL);
+        throw Vsplayexception(SOUND_ERROR_DEVOPENFAIL);
     }
 }
 
 void Rawplayeralsa::putblock(void *buffer, int size)
-  throw (Soundplayerexception)
+  throw (Vsplayexception)
 {
     snd_pcm_uframes_t frames = size / _framesize;
     while (frames && !_abort_flag)
@@ -114,10 +114,10 @@ void Rawplayeralsa::putblock(void *buffer, int size)
             {
             case -EPIPE:
                 if (snd_pcm_recover(_device_handle, -EPIPE, 1) < 0)
-                    throw Soundplayerexception(SOUND_ERROR_DEVCTRLERROR);
+                    throw Vsplayexception(SOUND_ERROR_DEVCTRLERROR);
                 break;
             otherwise:
-                throw Soundplayerexception(SOUND_ERROR_DEVWRITEFAIL);
+                throw Vsplayexception(SOUND_ERROR_DEVWRITEFAIL);
             };
         }
     }
