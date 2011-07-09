@@ -424,11 +424,6 @@ private:
 public:
   Mpegtoraw(Soundinputstream *loader,Soundplayer *player);
   void run(int frames) throw (Vsplayexception);
-  int  geterrorcode(void) {return __errorcode;};
-
-private:
-  int __errorcode;
-  bool seterrorcode(int errorno){__errorcode=errorno;return false;};
 
   /*****************************/
   /* Loading MPEG-Audio stream */
@@ -457,7 +452,7 @@ private:
   /* Decoding functions for each layer */
   /*************************************/
 private:
-  bool loadframe(void);
+  void loadframe(void) throw (Vsplayexception);
 
   //
   // Subbandsynthesis
@@ -530,8 +525,6 @@ public:
   Fileplayer();
   virtual ~Fileplayer();
 
-  int geterrorcode(void)        {return __errorcode;};
-
   void setoutput(Soundplayer * p) { player = p; };
   virtual void openfile(const char *filename)
     throw (Vsplayexception) = 0;
@@ -541,12 +534,8 @@ public:
   void abort() { _abort_flag = true; }
 
 protected:
-  bool seterrorcode(int errorno){__errorcode=errorno;return false;};
   Soundplayer *player;
   bool _abort_flag;
-
-private:
-  int __errorcode;
 };
 
 

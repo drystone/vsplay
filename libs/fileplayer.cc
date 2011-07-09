@@ -17,7 +17,6 @@
 Fileplayer::Fileplayer()
   : player(NULL)
   , _abort_flag(false)
-  , __errorcode(SOUND_ERROR_OK)
 {
 }
 

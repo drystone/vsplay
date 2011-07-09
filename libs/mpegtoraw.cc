@@ -25,7 +25,6 @@ Mpegtoraw::Mpegtoraw(Soundinputstream *l, Soundplayer *p)
   , downfrequency(0)
   , loader(l)
   , player(p)
-  , __errorcode(0)
 {
   register int i;
   register REAL *s1,*s2;
@@ -92,7 +91,8 @@ void Mpegtoraw::skip(size_t len)
   }
 }
 
-bool Mpegtoraw::loadframe(void)
+void Mpegtoraw::loadframe(void)
+  throw (Vsplayexception)
 {
   bytealign();
 
@@ -147,7 +147,7 @@ bool Mpegtoraw::loadframe(void)
   protection = (header & 0x00010000) ? false : true;
   bitrateindex = (header >> 12) & 0xf;
   if (bitrateindex == 15)
-    return seterrorcode(SOUND_ERROR_BAD);
+    throw Vsplayexception(SOUND_ERROR_BAD);
   frequency=(_frequency)((header >> 10) & 3);
   padding = (header & 0x00000200) ? true : false;
   mode = (_mode)((header >> 6) & 3);
@@ -215,11 +215,6 @@ bool Mpegtoraw::loadframe(void)
   preload(framesize - 4);
 
   if (protection) skip(2);
-
-  if (loader->eof())
-    return seterrorcode(SOUND_ERROR_FINISH);
-
-  return true;
 }
 /*
 newrun
@@ -253,12 +248,13 @@ void Mpegtoraw::run(int frames)
       player->drain();
       return;
     }
-    if (loadframe() == false)
-      break;
+    loadframe();
 
     if(frequency!=lastfrequency)
     {
-      if(lastfrequency>0)seterrorcode(SOUND_ERROR_BAD);
+      if(lastfrequency>0)
+        throw Vsplayexception(SOUND_ERROR_BAD);
+
       lastfrequency=frequency;
     }
     if(frames<0)
@@ -275,7 +271,4 @@ void Mpegtoraw::run(int frames)
     player->putblock((char *)rawdata,rawdataoffset<<1);
     rawdataoffset = 0;
   }
-
-  if (geterrorcode()!=SOUND_ERROR_OK)
-    throw Vsplayexception(geterrorcode());
 }
