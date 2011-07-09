@@ -51,12 +51,7 @@ bool Mpegfileplayer::openfile(const char *filename)
   else
     loader = new Soundinputstreamfromfile;
 
-  if(!loader->open(filename))
-  {
-    delete loader;
-    loader = NULL;
-    return false;
-  }
+  loader->open(filename);
 
   if((server=new Mpegtoraw(loader,player))==NULL)
     return seterrorcode(SOUND_ERROR_MEMORYNOTENOUGH);

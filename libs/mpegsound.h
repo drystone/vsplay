@@ -131,6 +131,12 @@ typedef struct
   const unsigned int (*val)[2];
 }HUFFMANCODETABLE;
 
+struct Vsplayexception
+{
+  int error;
+  Vsplayexception(int e) { error = e; };
+};
+
 class Bitstream
 {
 private:
@@ -199,7 +205,8 @@ public:
   Soundinputstream() : _fp(NULL) {};
   virtual ~Soundinputstream() { if (_fp) fclose(_fp); };
 
-  virtual bool open(const char *filename) = 0;
+  virtual void open(const char *filename)
+    throw (Vsplayexception) = 0;
   bool eof(void)
     { return feof(_fp); };
   size_t read(unsigned char *buffer, size_t size)
@@ -211,18 +218,16 @@ public:
 class Soundinputstreamfromfile : public Soundinputstream
 {
 public:
-  bool open(const char *filename);
+  void open(const char *filename)
+    throw (Vsplayexception);
 };
 
 // Inputstream from http
 class Soundinputstreamfromhttp : public Soundinputstream
 {
 public:
-  bool open(const char *filename);
-
-private:
-  bool writestring(int fd,char *string);
-  bool readstring(char *string,int maxlen,FILE *f);
+  void open(const char *filename)
+    throw (Vsplayexception);
 };
 
 
@@ -230,12 +235,6 @@ private:
 /* Sound player interface classes */
 /**********************************/
 // Superclass for player
-struct Vsplayexception
-{
-  int error;
-  Vsplayexception(int e) { error = e; };
-};
-
 class Soundplayer
 {
 public:

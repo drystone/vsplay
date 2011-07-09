@@ -32,22 +32,22 @@
 
 static const char *httpstr="http://";
 
-bool Soundinputstreamfromhttp::writestring(int fd, char *string)
+void writestring(int fd, char *string)
+  throw (Vsplayexception)
 {
   int result, bytes = strlen(string);
 
   while(bytes)
   {
     if((result=write(fd,string,bytes))<=0 && errno!=EINTR)
-      return false;
+      throw Vsplayexception(SOUND_ERROR_HTTPWRITEFAIL);
     string += result;
     bytes -= result;
   }
-
-  return true;
 }
 
-bool Soundinputstreamfromhttp::readstring(char *string,int maxlen,FILE *f)
+void readstring(char *string, int maxlen, FILE *f)
+  throw (Vsplayexception)
 {
   char *result;
 
@@ -55,9 +55,7 @@ bool Soundinputstreamfromhttp::readstring(char *string,int maxlen,FILE *f)
     result=fgets(string,maxlen,f);
   }while(!result  && errno==EINTR);
   if(!result)
-    return false;
-
-  return true;
+    throw Vsplayexception(SOUND_ERROR_HTTPFAIL);
 }
 
 static char *strndup(char *src,int num)
@@ -111,7 +109,8 @@ char *proxyurl=NULL;
 unsigned long proxyip=0;
 unsigned int proxyport;
 
-bool Soundinputstreamfromhttp::open(const char *url)
+void Soundinputstreamfromhttp::open(const char *url)
+  throw (Vsplayexception)
 {
   char *purl=NULL,*host,*request,*sptr;
   char agent[50];
@@ -132,7 +131,7 @@ bool Soundinputstreamfromhttp::open(const char *url)
     if (proxyurl && proxyurl[0] && strcmp(proxyurl, "none"))
     {
       if (!(url2hostport(proxyurl, &host, &proxyip, &proxyport)))
-	return false;
+        throw Vsplayexception(SOUND_ERROR_HTTPFAIL);
       if(host)free(host);
     }
     else
@@ -142,7 +141,7 @@ bool Soundinputstreamfromhttp::open(const char *url)
   if((linelength=strlen(url)+100)<1024)
     linelength=1024;
   if(!(request=(char *)malloc(linelength)) || !(purl=(char *)malloc(1024))) 
-    return false;
+    throw Vsplayexception(SOUND_ERROR_HTTPFAIL);
   strncpy(purl,url,1023);
   purl[1023]='\0';
   do{
@@ -158,7 +157,7 @@ bool Soundinputstreamfromhttp::open(const char *url)
     else
     {
       if(!(sptr=url2hostport(purl,&host,&myip,&myport)))
-	return false;
+        throw Vsplayexception(SOUND_ERROR_HTTPFAIL);
       if (host)
 	free (host);
       strcat (request, sptr);
@@ -170,37 +169,33 @@ bool Soundinputstreamfromhttp::open(const char *url)
     server.sin_port = htons(myport);
     server.sin_addr.s_addr = myip;
     if((sock=socket(PF_INET,SOCK_STREAM,6))<0)
-      return false;
+      throw Vsplayexception(SOUND_ERROR_HTTPFAIL);
     if(connect(sock,(struct sockaddr *)&server,sizeof(server)))
-      return false;
-    if(!writestring(sock,request))
-      return false;
+      throw Vsplayexception(SOUND_ERROR_HTTPFAIL);
+    writestring(sock,request);
     if(!(_fp=fdopen(sock, "rb")))
-      return false;
+      throw Vsplayexception(SOUND_ERROR_HTTPFAIL);
     relocate=false;
     purl[0]='\0';
-    if(!readstring(request,linelength-1,_fp))
-      return false;
+    readstring(request,linelength-1,_fp);
     if((sptr=strchr(request,' ')))
     {
       switch(sptr[1])
       {
         case '3':relocate=true;
         case '2':break;
-        default: return false;
+        default: throw Vsplayexception(SOUND_ERROR_HTTPFAIL);
       }
     }
     do{
-      if(!readstring(request,linelength-1,_fp))
-        return false;
+      readstring(request,linelength-1,_fp);
       if(!strncmp(request,"Location:",9))
 	strncpy (purl,request+10,1023);
     }while(request[0]!='\r' && request[0]!='n');
   }while(relocate && purl[0] && numrelocs++<5);
   if(relocate)
-    return false;
+    throw Vsplayexception(SOUND_ERROR_HTTPFAIL);
   free(purl);
   free(request);
-  return true;
 }
 

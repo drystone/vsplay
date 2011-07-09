@@ -13,13 +13,14 @@
 
 #include "mpegsound.h"
 
-bool Soundinputstreamfromfile::open(const char *filename)
+void Soundinputstreamfromfile::open(const char *filename)
+  throw (Vsplayexception)
 {
   if (!strcmp(filename, "-"))
     _fp = stdin;
   else
     _fp = fopen(filename, "r");
   
-  return _fp != NULL;
+  if (!_fp) throw Vsplayexception(SOUND_ERROR_FILEOPENFAIL);
 }
 
