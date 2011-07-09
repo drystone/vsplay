@@ -73,15 +73,14 @@ void Mpegfileplayer::setdownfrequency(int value)
 void Mpegfileplayer::playing(int verbose)
   throw (Vsplayexception)
 {
-  if(!server->run(-1))
-  {       // Initialize MPEG Layer 3
-      throw Vsplayexception(server->geterrorcode());
-  }
+  server->run(-1);
   if (verbose > 2)
     showverbose(verbose);
 
   // Playing
-  while (server->run(1)) {
+  while (!loader->eof())
+  {
+    server->run(1);
     if (_abort_flag)
     {
       player->abort();

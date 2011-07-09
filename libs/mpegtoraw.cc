@@ -240,7 +240,8 @@ while 1
 */
 
 // Convert mpeg to raw
-bool Mpegtoraw::run(int frames)
+void Mpegtoraw::run(int frames)
+  throw (Vsplayexception)
 {
   clearrawdata();
   if(frames<0)lastfrequency=0;
@@ -249,9 +250,8 @@ bool Mpegtoraw::run(int frames)
   {
     if(loader->eof())
     {
-      seterrorcode(SOUND_ERROR_FINISH);
       player->drain();
-      break;
+      return;
     }
     if (loadframe() == false)
       break;
@@ -264,16 +264,8 @@ bool Mpegtoraw::run(int frames)
     if(frames<0)
     {
       frames=-frames;
-      try
-      {
-        player->setsoundtype( outputstereo, 16,
-		   frequencies[version][frequency] >> downfrequency);
-      }
-      catch (Vsplayexception &e)
-      {
-          seterrorcode(e.error);
-          break;
-      }
+      player->setsoundtype( outputstereo, 16,
+        frequencies[version][frequency] >> downfrequency);
     }
 
     if     (layer==3)extractlayer3();
@@ -284,5 +276,6 @@ bool Mpegtoraw::run(int frames)
     rawdataoffset = 0;
   }
 
-  return (geterrorcode()==SOUND_ERROR_OK);
+  if (geterrorcode()!=SOUND_ERROR_OK)
+    throw Vsplayexception(geterrorcode());
 }

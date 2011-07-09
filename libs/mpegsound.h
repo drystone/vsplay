@@ -423,7 +423,7 @@ private:
   /*******************/
 public:
   Mpegtoraw(Soundinputstream *loader,Soundplayer *player);
-  bool run(int frames);
+  void run(int frames) throw (Vsplayexception);
   int  geterrorcode(void) {return __errorcode;};
 
 private:
