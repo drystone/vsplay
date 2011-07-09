@@ -74,7 +74,6 @@ void usage()
     << std::setw(12) << std::left << "\t-v[v[v]]" << "verbose, verboser, verbosest" << std::endl
     << std::setw(12) << std::left << "\t-M" << "play standard input" << std::endl
     << std::setw(12) << std::left << "\t-V" << "show version and exit" << std::endl
-    << std::setw(12) << std::left << "\t-k <num>" << "playing from frame <num>" << std::endl
     << std::setw(12) << std::left << "\t-d <dev>" << "use audio device <dev>" << std::endl
     << std::setw(12) << std::left << "\t-l" << "list list file" << std::endl
     << std::endl
@@ -86,7 +85,7 @@ void usage()
 /***********************/
 void error(int n)
 {
-  std::cerr << progname << " " << vsplay_Sounderrors[n-1] << std::endl;
+  std::cerr << progname << " " << vsplay_Sounderrors[n-1] << " (" << n << ")" << std::endl;
 }
 
 #ifdef TAGLIB
@@ -235,7 +234,7 @@ int main(int argc,char *argv[])
   opterr = 0;
   while (1)
   {
-    int c = getopt(argc, argv, "VM2mrsvd:k:l:");
+    int c = getopt(argc, argv, "VM2mrsvd:l:");
     if (c == -1)
       break;
 

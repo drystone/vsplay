@@ -146,7 +146,7 @@ protected:
   uint16_t byteoffset, freeoffset;
   unsigned int bitoffset;
 public:
-  Bitstream() : buffer(new unsigned char[USHRT_MAX]), byteoffset(0), bitoffset(0), freeoffset(0) {};
+  Bitstream() : buffer(new unsigned char[USHRT_MAX+1]), byteoffset(0), bitoffset(0), freeoffset(0) {};
   inline unsigned int getavailable() const
   {
     return freeoffset >= byteoffset 
@@ -218,8 +218,11 @@ public:
 class Soundinputstreamfromfile : public Soundinputstream
 {
 public:
-  void open(const char *filename)
-    throw (Vsplayexception);
+  void open(const char *filename) throw (Vsplayexception)
+  {
+    _fp = strcmp(filename, "-") ? fopen(filename, "r") : stdin;
+    if (!_fp) throw Vsplayexception(SOUND_ERROR_FILEOPENFAIL);
+  };
 };
 
 // Inputstream from http
@@ -371,7 +374,7 @@ private:
   int layer,protection,bitrateindex,padding,extendedmode;
   enum _mpegversion  {mpeg1,mpeg2}                               version;
   enum _mode    {fullstereo,joint,dual,single}                   mode;
-  enum _frequency {frequency44100,frequency48000,frequency32000} frequency;
+  enum _frequency {frequency44100, frequency48000, frequency32000} frequency;
 
   /*******************************************/
   /* Functions getting MPEG header variables */
@@ -405,13 +408,6 @@ public:
 public:
   bool getforcetomono(void);
   int  getdownfrequency(void);
-  int  getpcmperframe(void);
-
-  /******************************/
-  /* Frame management functions */
-  /******************************/
-public:
-  void setframe(int framenumber);
 
   /***************************************/
   /* Variables made by MPEG-Audio header */

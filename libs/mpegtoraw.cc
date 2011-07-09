@@ -25,6 +25,7 @@ Mpegtoraw::Mpegtoraw(Soundinputstream *l, Soundplayer *p)
   , downfrequency(0)
   , loader(l)
   , player(p)
+  , __errorcode(0)
 {
   register int i;
   register REAL *s1,*s2;
@@ -70,25 +71,6 @@ int Mpegtoraw::getdownfrequency(void)
   return downfrequency;
 }
 
-int  Mpegtoraw::getpcmperframe(void)
-{
-  int s;
-
-  s=32;
-  if(layer==3)
-  {
-    s*=18;
-    if(version==0)s*=2;
-  }
-  else
-  {
-    s*=SCALEBLOCK;
-    if(layer==2)s*=3;
-  }
-
-  return s;
-}
-
 void Mpegtoraw::preload(size_t len)
 {
   if (getavailable() < len)
@@ -109,12 +91,6 @@ void Mpegtoraw::skip(size_t len)
     loader->skip(len - available);
   }
 }
-
-inline void Mpegtoraw::flushrawdata(void)
-{
-  player->putblock((char *)rawdata,rawdataoffset<<1);
-  rawdataoffset=0;
-};
 
 bool Mpegtoraw::loadframe(void)
 {
@@ -304,7 +280,8 @@ bool Mpegtoraw::run(int frames)
     else if(layer==2)extractlayer2();
     else if(layer==1)extractlayer1();
 
-    flushrawdata();
+    player->putblock((char *)rawdata,rawdataoffset<<1);
+    rawdataoffset = 0;
   }
 
   return (geterrorcode()==SOUND_ERROR_OK);

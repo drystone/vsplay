@@ -80,9 +80,6 @@ bool Mpegfileplayer::playing(int verbose)
   if (verbose > 2)
     showverbose(verbose);
 
-  int pcmperframe=server->getpcmperframe();
-  int frequency=server->getfrequency();
-
   // Playing
   while (server->run(1)) {
     if (_abort_flag)
