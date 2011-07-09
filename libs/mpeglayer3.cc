@@ -174,7 +174,8 @@ void Mpegtoraw::layer3initialize(void)
   initializedlayer3=true;
 }
 
-bool Mpegtoraw::layer3getsideinfo(void)
+void Mpegtoraw::layer3getsideinfo(void)
+  throw (Vsplayexception)
 {
   unsigned int bits;
 
@@ -226,7 +227,7 @@ bool Mpegtoraw::layer3getsideinfo(void)
 	{
 	  /* printf("Side info bad: block_type == 0 in split block.\n");
 	     exit(0); */
-	  return false;
+          throw Vsplayexception(SOUND_ERROR_BAD);
 	}
 	else if (gi->block_type==2 && gi->mixed_block_flag==0)
 	     gi->region0_count=8; /* MI 9; */
@@ -252,11 +253,10 @@ bool Mpegtoraw::layer3getsideinfo(void)
 
       if(!inputstereo || ch)break;
     }
-
-  return true;
 }
 
-bool Mpegtoraw::layer3getsideinfo_2(void)
+void Mpegtoraw::layer3getsideinfo_2(void)
+  throw (Vsplayexception)
 {
   sideinfo.main_data_begin=getbits(8);
 
@@ -291,7 +291,7 @@ bool Mpegtoraw::layer3getsideinfo_2(void)
       {
 	/* printf("Side info bad: block_type == 0 in split block.\n");
 	   exit(0); */
-	return false;
+        throw Vsplayexception(SOUND_ERROR_BAD);
       }
       else if (gi->block_type==2 && gi->mixed_block_flag==0)
 	gi->region0_count=8; /* MI 9; */
@@ -315,8 +315,6 @@ bool Mpegtoraw::layer3getsideinfo_2(void)
     
     if(!inputstereo || ch)break;
   }
-
-  return true;
 }
 
 void Mpegtoraw::layer3getscalefactors(int ch,int gr)
@@ -1591,7 +1589,11 @@ void Mpegtoraw::extractlayer3(void)
     int main_data_end,flush_main;
     int bytes_to_discard;
 
-    layer3getsideinfo();
+    try
+    {
+      layer3getsideinfo();
+    }
+    catch (...) {}
 	 
     if(isbytealigned())
     {
@@ -1702,7 +1704,11 @@ void Mpegtoraw::extractlayer3_2(void)
     int main_data_end,flush_main;
     int bytes_to_discard;
 
-    layer3getsideinfo_2();
+    try
+    {
+      layer3getsideinfo_2();
+    }
+    catch (...) {}
 	 
     if(isbytealigned())
     {

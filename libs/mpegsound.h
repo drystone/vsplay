@@ -484,8 +484,10 @@ private:
 
   // Functions for layer 3
   void layer3initialize(void);
-  bool layer3getsideinfo(void);
-  bool layer3getsideinfo_2(void);
+  void layer3getsideinfo(void)
+    throw (Vsplayexception);
+  void layer3getsideinfo_2(void)
+    throw (Vsplayexception);
   void layer3getscalefactors(int ch,int gr);
   void layer3getscalefactors_2(int ch);
   void layer3huffmandecode(int ch,int gr,int out[SBLIMIT][SSLIMIT]);
