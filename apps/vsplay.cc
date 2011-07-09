@@ -68,7 +68,6 @@ void usage()
     << " [-2fmrsvMVW] [-d device] [-l listfile] [-k frame] files ..." << std::endl
     << std::endl
     << std::setw(12) << std::left << "\t-2" << "half frequency" << std::endl
-    << std::setw(12) << std::left << "\t-f" << "show frame and time info" << std::endl
     << std::setw(12) << std::left << "\t-m" << "mono" << std::endl
     << std::setw(12) << std::left << "\t-r" << "repeat" << std::endl
     << std::setw(12) << std::left << "\t-s" << "shuffle" << std::endl
@@ -105,7 +104,7 @@ std::ostream& operator<<(std::ostream& s, const TagLib::Tag& tag )
 }
 #endif /* TAGLIB */
 
-static void play(const std::string& filename, Soundplayer* device, bool frameinfo)
+static void play(const std::string& filename, Soundplayer* device)
 {
   if( g_verbose )
     std::cout << "Playing file: " << filename << std::endl;
@@ -230,14 +229,13 @@ int main(int argc,char *argv[])
   bool stdin_only = false;
   bool shuffle = false;
   bool repeat = false;
-  bool frameinfo = false;
 
   strcpy(progname, basename(argv[0]));
 
   opterr = 0;
   while (1)
   {
-    int c = getopt(argc, argv, "VM2mfrsvd:k:l:");
+    int c = getopt(argc, argv, "VM2mrsvd:k:l:");
     if (c == -1)
       break;
 
@@ -251,9 +249,6 @@ int main(int argc,char *argv[])
       break;
     case '2':
       g_player.setdownfrequency(true);
-      break;
-    case 'f':
-      frameinfo = true;
       break;
     case 'm':
       g_player.setforcetomono(true);
@@ -326,7 +321,7 @@ int main(int argc,char *argv[])
 
     std::vector<std::string>::iterator i;
     for(i = playlist.begin(); i != playlist.end(); i++)
-      play(*i, device, frameinfo);
+      play(*i, device);
 
   } while (repeat);
 
