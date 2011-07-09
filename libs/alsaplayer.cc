@@ -112,11 +112,13 @@ void Rawplayeralsa::putblock(void *buffer, int size)
         {
             switch (e.errnum)
             {
+            case -EAGAIN:
+                continue;
             case -EPIPE:
                 if (snd_pcm_recover(_device_handle, -EPIPE, 1) < 0)
                     throw Vsplayexception(SOUND_ERROR_DEVCTRLERROR);
                 break;
-            otherwise:
+            default:
                 throw Vsplayexception(SOUND_ERROR_DEVWRITEFAIL);
             };
         }
