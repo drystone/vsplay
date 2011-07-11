@@ -1,9 +1,5 @@
-/* Sound Player
-
-   Copyright (C) 1997 by Woo-jae Jung */
-
-// It's an example of using MPEG Sound library
-
+// Copyright (C) 2011 John Hedges
+// Copyright (C) 1997 by Woo-jae Jung
 // Anyone can use MPEG Sound library under GPL
 
 #ifdef HAVE_CONFIG_H
@@ -34,7 +30,6 @@
 
 #include "mpegsound.h"
 
-typedef enum {devicetype_oss, devicetype_alsa} Devicetype;
 bool single_threaded = false;
 Mpegfileplayer g_player;
 char progname[MAXPATHLEN];
@@ -138,7 +133,7 @@ void sigint_capture(int)
     long diff = (now.tv_sec - last.tv_sec) * 1000 
               + (now.tv_usec - last.tv_usec) / 1000;
     if (diff < 250)
-      exit(0);
+      exit(EXIT_SUCCESS);
   }
   last.tv_sec = now.tv_sec;
   last.tv_usec = now.tv_usec;
@@ -162,69 +157,9 @@ void readlist(std::istream& s)
   delete linebuf;
 }
 
-Soundplayer * open_device(const char * devicename, Devicetype devicetype) throw (int)
-{
-  Soundplayer * device = NULL;
-  switch (devicetype)
-  {
-  case devicetype_oss:
-    if (!devicename)
-    {
-      const char * const default_devices[] = { "/dev/sound/dsp", "/dev/dsp", 0 };
-      for (int i = 0; default_devices[i]; ++i)
-      {
-        int fd = open(default_devices[i], O_WRONLY|O_NDELAY);
-        if (fd != -1)
-        {
-          close(fd);
-          devicename = default_devices[i];
-          break;
-        }
-      }
-      if (!devicename)
-      {
-        throw SOUND_ERROR_DEVOPENFAIL;
-      }
-    }
-    if (devicename[0] == '/')
-    { // assume device
-      device = new Rawplayer;
-    }
-    else
-    { // file or stdout
-      device = new Rawtofile;
-    }
-    if (devicename[0] == '-') devicename = NULL;  // clear device name for correct stdout initialisation
-    break;
-    
-#ifdef ALSA
-  case devicetype_alsa:
-    if (!devicename)
-      devicename = "default";
-    device = new Rawplayeralsa;
-    break;
-#endif // ALSA
-  }
-
-  if (!device) // memory allocation problem
-    throw SOUND_ERROR_MEMORYNOTENOUGH;
-
-  try
-  {
-    device->initialize(devicename);
-  }
-  catch (Vsplayexception& e)
-  { // initialisation problem
-    delete device;
-    throw error;
-  }
-  return device;
-}
-      
 int main(int argc,char *argv[])
 {
-  Devicetype devicetype = devicetype_alsa;
-  char const * devicename = NULL;
+  char const * devicename = "default";
   char const * list_file = NULL;
   bool stdin_only = false;
   bool shuffle = false;
@@ -264,7 +199,7 @@ int main(int argc,char *argv[])
       g_verbose++;
       break;
     case 'd':
-      devicename=optarg;
+      devicename = optarg;
       break;
     case 'l':
       list_file = optarg;
@@ -300,15 +235,20 @@ int main(int argc,char *argv[])
   }
 
   // create the output device
-  Soundplayer* device;
+  Soundplayer * device = 0;
   try
   {
-    device = open_device(devicename, devicetype);
+    if (!strcmp(devicename, "-"))
+      device = new Rawtofile;
+    else if (devicename[0] == '/')
+      device = new Rawplayer(devicename);
+    else
+      device = new Rawplayeralsa(devicename);
   }
-  catch (int e)
+  catch (Vsplayexception &e)
   {
-    error(e);
-    return 1;
+    error(e.error);
+    exit(EXIT_FAILURE);
   }
 
   g_player.setoutput(device);

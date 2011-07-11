@@ -24,49 +24,25 @@
 #define IOCTL(a,b,c)		(c = ioctl(a,b,c) )
 #endif
 
-const char *Rawplayer::defaultdevice="/dev/dsp";
-
-/* Volume */
-int Rawplayer::setvolume(int volume)
-{
-  int handle;
-  int r;
-
-  handle=open("/dev/mixer",O_RDWR);
-
-  if(volume>100)volume=100;
-  if(volume>=0)
-  {
-    r=(volume<<8) | volume;
-
-    ioctl(handle,MIXER_WRITE(SOUND_MIXER_VOLUME),&r);
-  }
-  ioctl(handle,MIXER_READ(SOUND_MIXER_VOLUME),&r);
-
-  close(handle);
-
-  return (r&0xFF);
-}
-
 /*******************/
 /* Rawplayer class */
 /*******************/
 // Rawplayer class
-Rawplayer::~Rawplayer()
-{
-  close(audiohandle);
-}
-
-void Rawplayer::initialize(const char *filename) throw (Vsplayexception)
+Rawplayer::Rawplayer(const char * filename)
+  throw(Vsplayexception)
 {
   if ((audiohandle = open(filename, O_WRONLY)) == -1)
     throw Vsplayexception(SOUND_ERROR_DEVOPENFAIL);
 }
 
+Rawplayer::~Rawplayer()
+{
+  close(audiohandle);
+}
+
 void Rawplayer::stop(void)
 {
   int a;
-
   IOCTL(audiohandle,SNDCTL_DSP_RESET,a);
 }
 
@@ -77,7 +53,6 @@ void Rawplayer::setsoundtype(int stereo, int samplesize, int speed)
   rawsamplesize = samplesize;
   rawspeed = speed;
   forcetomono = forceto8 = false;
-
   resetsoundtype();
 }
 

@@ -9,6 +9,7 @@
 #include "config.h"
 #endif
 
+#include <iostream>
 #include "mpegsound.h"
 
 // Tables for layer 1
@@ -41,67 +42,58 @@ void Mpegtoraw::extractlayer1(void)
 {
   REAL fraction[MAXCHANNEL][MAXSUBBAND];
   REAL scalefactor[MAXCHANNEL][MAXSUBBAND];
+  int bitalloc[MAXCHANNEL][MAXSUBBAND];
+  register int i,t;
 
-  int bitalloc[MAXCHANNEL][MAXSUBBAND],
-      sample[MAXCHANNEL][MAXSUBBAND];
-
-  register int i,j;
-  int s=stereobound,l;
-
-
+std::cout << "ok" << std::endl;
 // Bitalloc
-  for(i=0;i<s;i++)
+  for (i = 0; i < stereobound; i++)
   {
-    bitalloc[LS][i]=getbits(4);
-    bitalloc[RS][i]=getbits(4);
+    prefetch(2, 4);
+    bitalloc[LS][i] = fetch();
+    bitalloc[RS][i] = fetch();
   }
-  for(;i<MAXSUBBAND;i++)
-    bitalloc[LS][i]=
-    bitalloc[RS][i]=getbits(4);
+  for (; i < MAXSUBBAND; i++)
+    bitalloc[LS][i] = bitalloc[RS][i] = getbits(4);
 
 // Scale index
-  if(inputstereo)
-    for(i=0;i<MAXSUBBAND;i++)
-    {
-      if(bitalloc[LS][i])scalefactor[LS][i]=scalefactorstable[getbits(6)];
-      if(bitalloc[RS][i])scalefactor[RS][i]=scalefactorstable[getbits(6)];
-    }
-  else
-    for(i=0;i<MAXSUBBAND;i++)
-      if(bitalloc[LS][i])scalefactor[LS][i]=scalefactorstable[getbits(6)];
-
-  for(l=0;l<SCALEBLOCK;l++)
+  if (inputstereo)
   {
-    // Sample
-    for(i=0;i<s;i++)
+    for (i = 0; i < MAXSUBBAND; i++)
     {
-      if((j=bitalloc[LS][i]))sample[LS][i]=getbits(j+1);
-      if((j=bitalloc[RS][i]))sample[RS][i]=getbits(j+1);
+      if (bitalloc[LS][i]) scalefactor[LS][i] = scalefactorstable[getbits(6)];
+      if (bitalloc[RS][i]) scalefactor[RS][i] = scalefactorstable[getbits(6)];
     }
-    for(;i<MAXSUBBAND;i++)
-      if((j=bitalloc[LS][i]))sample[LS][i]=sample[RS][i]=getbits(j+1);
+  }
+  else
+    for (i = 0; i < MAXSUBBAND; i++)
+      if (bitalloc[LS][i]) scalefactor[LS][i] = scalefactorstable[getbits(6)];
 
-
-    // Fraction
-    if(outputstereo)
-      for(i=0;i<MAXSUBBAND;i++)
+  for(int l = 0; l < SCALEBLOCK; l++)
+  {
+    for(i=0;i<stereobound;i++)
+    {
+      t = bitalloc[LS][i];
+      fraction[LS][i] = t 
+        ? (REAL(getbits(t+1)) * factortable[t] + offsettable[t]) * scalefactor[LS][i]
+        : 0.0;
+      t = bitalloc[RS][i];
+      fraction[RS][i] = t 
+        ? (REAL(getbits(t+1)) * factortable[t] + offsettable[t]) * scalefactor[RS][i]
+        : 0.0;
+    }
+    for (i; i < MAXSUBBAND; i++)
+    {
+      if ((t = bitalloc[LS][i]))
       {
-	if((j=bitalloc[LS][i]))
-	  fraction[LS][i]=(REAL(sample[LS][i])*factortable[j]+offsettable[j])
-			  *scalefactor[LS][i];
-	else fraction[LS][i]=0.0;
-	if((j=bitalloc[RS][i]))
-	  fraction[RS][i]=(REAL(sample[RS][i])*factortable[j]+offsettable[j])
-			  *scalefactor[RS][i];
-	else fraction[RS][i]=0.0;
+        REAL tt = REAL(getbits(t+1)) * factortable[t] + offsettable[t];
+        fraction[LS][i] = tt * scalefactor[LS][i];
+        fraction[RS][i] = tt * scalefactor[RS][i];
       }
-    else
-      for(i=0;i<MAXSUBBAND;i++)
-	if((j=bitalloc[LS][i]))
-	  fraction[LS][i]=(REAL(sample[LS][i])*factortable[j]+offsettable[j])
-			  *scalefactor[LS][i];
-	else fraction[LS][i]=0.0;
+      else fraction[LS][i] = fraction[RS][i] = 0.0;
+    }
 
     subbandsynthesis(fraction[LS],fraction[RS]);
   }
 }
+

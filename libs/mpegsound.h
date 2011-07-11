@@ -241,10 +241,8 @@ class Soundplayer
 {
 public:
   virtual ~Soundplayer() {};
-  virtual void initialize(const char *filename)
-    throw (Vsplayexception) = 0;
   virtual void setsoundtype(int stereo, int samplesize, int speed)
-    throw (Vsplayexception) = 0;
+    throw (Vsplayexception) {};
   virtual void putblock(void *buffer,int size)
     throw (Vsplayexception) = 0;
   virtual void resetsoundtype(void)
@@ -257,13 +255,12 @@ public:
 class Rawtofile : public Soundplayer
 {
 public:
-  ~Rawtofile();
-  void initialize(const char *filename)
-    throw (Vsplayexception);
-  void setsoundtype(int stereo,int samplesize,int speed)
-    throw (Vsplayexception);
   void putblock(void *buffer,int size)
-    throw (Vsplayexception);
+    throw (Vsplayexception)
+  {
+    if (fwrite(buffer, 1, size, stdout) != size)
+      throw Vsplayexception(SOUND_ERROR_DEVWRITEFAIL);
+  };
 
 private:
   int filehandle;
@@ -274,16 +271,13 @@ private:
 class Rawplayer : public Soundplayer
 {
 public:
-  ~Rawplayer();
-
-  void initialize(const char *filename)
+  Rawplayer(const char * devicename)
     throw (Vsplayexception);
-
+  ~Rawplayer();
   void setsoundtype(int stereo,int samplesize,int speed)
     throw (Vsplayexception);
   void resetsoundtype(void)
     throw (Vsplayexception);
-
   void putblock(void *buffer,int size)
     throw (Vsplayexception);
 
@@ -307,7 +301,8 @@ private:
 class Rawplayeralsa : public Soundplayer
 {
 public:
-  Rawplayeralsa();
+  Rawplayeralsa(const char * devicename)
+    throw (Vsplayexception);
   ~Rawplayeralsa();
 
   void initialize(const char *filename)

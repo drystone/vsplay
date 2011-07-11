@@ -35,7 +35,7 @@
 class Alsa_error {
 public:
     int errnum;
-    Alsa_error(int e) : errnum(e) {};
+    Alsa_error(int e) : errnum(e) { if (errnum != -EAGAIN) std::cout << "alsa error: " << errnum << std::endl; };
 };
 
 inline int alsa_throw(int result) throw(Alsa_error) {
@@ -43,32 +43,30 @@ inline int alsa_throw(int result) throw(Alsa_error) {
     return result;
 }
 
-Rawplayeralsa::Rawplayeralsa()
-      : _device_handle(0)
-      , _hw_params(0)
+Rawplayeralsa::Rawplayeralsa(const char * devicename)
+    throw (Vsplayexception)
+    : _device_handle(0)
+    , _hw_params(0)
 {
+    try
+    {
+        // allocate the hw_params structure, open the alsa device and get its capabilities
+        alsa_throw(snd_pcm_hw_params_malloc(&_hw_params));
+        alsa_throw(snd_pcm_open(&_device_handle, devicename, SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK));
+        alsa_throw(snd_pcm_hw_params_any(_device_handle, _hw_params));
+    }
+    catch (Alsa_error &e)
+    {
+        if (_hw_params) snd_pcm_hw_params_free(_hw_params);
+        if (_device_handle) snd_pcm_close(_device_handle);
+        throw Vsplayexception(SOUND_ERROR_DEVOPENFAIL);
+    }
 }
   
 Rawplayeralsa::~Rawplayeralsa()
 {
     if (_device_handle) snd_pcm_close(_device_handle);
     if (_hw_params) snd_pcm_hw_params_free(_hw_params);
-}
-
-void Rawplayeralsa::initialize(const char* filename)
-  throw (Vsplayexception)
-{
-    try
-    {
-        // allocate the hw_params structure, open the alsa device and get its capabilities
-        alsa_throw(snd_pcm_hw_params_malloc(&_hw_params));
-        alsa_throw(snd_pcm_open(&_device_handle, filename, SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK));
-        alsa_throw(snd_pcm_hw_params_any(_device_handle, _hw_params));
-    }
-    catch (Alsa_error &e)
-    {
-        throw Vsplayexception(SOUND_ERROR_DEVOPENFAIL);
-    }
 }
 
 void Rawplayeralsa::setsoundtype(int stereo, int samplesize, int speed)
@@ -89,7 +87,7 @@ void Rawplayeralsa::setsoundtype(int stereo, int samplesize, int speed)
     }
     catch (Alsa_error &e)
     {
-        throw Vsplayexception(SOUND_ERROR_DEVOPENFAIL);
+        throw Vsplayexception(SOUND_ERROR_DEVCTRLERROR);
     }
 }
 
