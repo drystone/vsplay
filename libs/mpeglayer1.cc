@@ -82,7 +82,7 @@ std::cout << "ok" << std::endl;
         ? (REAL(getbits(t+1)) * factortable[t] + offsettable[t]) * scalefactor[RS][i]
         : 0.0;
     }
-    for (i; i < MAXSUBBAND; i++)
+    for (; i < MAXSUBBAND; i++)
     {
       if ((t = bitalloc[LS][i]))
       {

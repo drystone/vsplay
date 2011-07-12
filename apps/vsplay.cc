@@ -67,7 +67,6 @@ void usage()
     << std::setw(12) << std::left << "\t-r" << "repeat" << std::endl
     << std::setw(12) << std::left << "\t-s" << "shuffle" << std::endl
     << std::setw(12) << std::left << "\t-v[v[v]]" << "verbose, verboser, verbosest" << std::endl
-    << std::setw(12) << std::left << "\t-M" << "play standard input" << std::endl
     << std::setw(12) << std::left << "\t-V" << "show version and exit" << std::endl
     << std::setw(12) << std::left << "\t-d <dev>" << "use audio device <dev>" << std::endl
     << std::setw(12) << std::left << "\t-l" << "list list file" << std::endl
@@ -161,7 +160,6 @@ int main(int argc,char *argv[])
 {
   char const * devicename = "default";
   char const * list_file = NULL;
-  bool stdin_only = false;
   bool shuffle = false;
   bool repeat = false;
 
@@ -170,7 +168,7 @@ int main(int argc,char *argv[])
   opterr = 0;
   while (1)
   {
-    int c = getopt(argc, argv, "VM2mrsvd:l:");
+    int c = getopt(argc, argv, "V2mrsvd:l:");
     if (c == -1)
       break;
 
@@ -179,9 +177,6 @@ int main(int argc,char *argv[])
     case 'V':
       std::cout << PACKAGE << VERSION << std::endl;
       return 0;
-    case 'M':
-      stdin_only = true;
-      break;
     case '2':
       g_player.setdownfrequency(true);
       break;
@@ -225,7 +220,7 @@ int main(int argc,char *argv[])
       std::cerr << "List file: " << list_file << std::endl;
   }
 
-  for (optind; optind < argc; ++optind)
+  for (; optind < argc; ++optind)
     playlist.push_back(std::string(argv[optind]));
 
   if (!playlist.size())

@@ -146,7 +146,7 @@ protected:
   uint16_t byteoffset, freeoffset;
   unsigned int bitoffset;
 public:
-  Bitstream() : buffer(new unsigned char[USHRT_MAX+1]), byteoffset(0), bitoffset(0), freeoffset(0) {};
+  Bitstream() : buffer(new unsigned char[USHRT_MAX+1]), byteoffset(0), freeoffset(0), bitoffset(0) {};
   inline unsigned int getavailable() const
   {
     return freeoffset >= byteoffset 
@@ -180,7 +180,7 @@ public:
       bitoffset = 0;
       return buffer[byteoffset++] & 1;
     }
-    else return (buffer[byteoffset] & (1 << 8-bitoffset)) ? 1 : 0;
+    else return (buffer[byteoffset] & (1 << (8-bitoffset))) ? 1 : 0;
   };
   inline bool isbytealigned() { return bitoffset == 0; };
   inline void prefetch(unsigned int count, unsigned int size) {
@@ -258,7 +258,7 @@ public:
   void putblock(void *buffer,int size)
     throw (Vsplayexception)
   {
-    if (fwrite(buffer, 1, size, stdout) != size)
+    if (fwrite(buffer, 1, size, stdout) != (unsigned int)size)
       throw Vsplayexception(SOUND_ERROR_DEVWRITEFAIL);
   };
 
@@ -338,14 +338,13 @@ public:
     point &= (WINDOWSIZE - 1);
     if (byteoffset >= point)
     {
-      for (register int i = 4; i < point; i++)
+      for (register unsigned int i = 4; i < point; i++)
         buffer[WINDOWSIZE + i]=buffer[i];
     }
     *((int *)(buffer+WINDOWSIZE))=*((int *)buffer);
   }
-  void rewind(int bits) { byteoffset -= (bits >> 3); if ((bits & 7) > bitoffset) { bitoffset += 8; --byteoffset; } bitoffset -= (bits & 7); };
-  void forward(int bits) { byteoffset += (bits >> 3); bitoffset += (bits & 7); if (bitoffset >= 8) { bitoffset -=8; ++byteoffset; } };
-  inline unsigned int getbits9(int bits) { return getbits(bits); };
+  inline void rewind(int bits) { byteoffset -= (bits >> 3); if ((bits & 7) > bitoffset) { bitoffset += 8; --byteoffset; } bitoffset -= (bits & 7); };
+  inline void forward(int bits) { byteoffset += (bits >> 3); bitoffset += (bits & 7); if (bitoffset >= 8) { bitoffset -=8; ++byteoffset; } };
 };
 
 // Class for converting mpeg format to raw format
@@ -403,6 +402,7 @@ private:
   int tableindex;
   int stereobound,subbandnumber,inputstereo,outputstereo;
   REAL scalefactor;
+  inline int scale(REAL r);
   int framesize;
 
   /*******************/
@@ -498,7 +498,7 @@ private:
   short int rawdata[RAWDATASIZE];
 
   void clearrawdata(void)    {rawdataoffset=0;};
-  void putraw(short int pcm) {rawdata[rawdataoffset++]=pcm;};
+  inline void putraw(short int pcm) {rawdata[rawdataoffset++]=pcm;};
   void flushrawdata(void);
 };
 

@@ -120,7 +120,6 @@ void Soundinputstreamfromhttp::open(const char *url)
   int sock;
   int relocate=0,numrelocs=0;
   struct sockaddr_in server;
-  FILE *myfile;
 
   if(!proxyip)
   {

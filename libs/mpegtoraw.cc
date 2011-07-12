@@ -24,19 +24,15 @@ Mpegtoraw::Mpegtoraw(Soundinputstream *l, Soundplayer *p)
   : forcetomonoflag(false)
   , downfrequency(0)
   , loader(l)
-  , player(p)
   , _abort_flag(false)
+  , player(p)
 {
   register int i;
-  register REAL *s1,*s2;
-  REAL *s3,*s4;
 
   scalefactor=SCALE;
   calcbufferoffset=15;
   currentcalcbuffer=0;
 
-  s1=calcbufferL[0];s2=calcbufferR[0];
-  s3=calcbufferL[1];s4=calcbufferR[1];
   for(i=CALCBUFFERSIZE-1;i>=0;i--)
     calcbufferL[0][i]=calcbufferL[1][i]=
     calcbufferR[0][i]=calcbufferR[1][i]=0.0;
@@ -146,7 +142,7 @@ void Mpegtoraw::loadframe(void)
 
   // deconstruct header
   version = (header & 0x00080000) ? mpeg1 : mpeg2;
-  layer = 4 - (header >> 17) & 3;
+  layer = 4 - ((header >> 17) & 3);
   protection = (header & 0x00010000) ? false : true;
   bitrateindex = (header >> 12) & 0xf;
   if (bitrateindex == 15)

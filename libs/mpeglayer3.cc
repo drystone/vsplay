@@ -177,8 +177,6 @@ void Mpegtoraw::layer3initialize(void)
 void Mpegtoraw::layer3getsideinfo(void)
   throw (Vsplayexception)
 {
-  unsigned int bits;
-
   sideinfo.main_data_begin=getbits(9);
 
   if(!inputstereo)sideinfo.private_bits=getbits(5);
@@ -986,15 +984,9 @@ inline void Mpegtoraw::layer3fixtostereo(int gr,REAL in[2][SBLIMIT][SSLIMIT])
 
 	if(max_sfb<=3)
 	{
-	  {
-	    REAL temp;
-	    int k;
-
-	    temp=in[1][0][0];in[1][0][0]=1.0;
-	    for(k=3*SSLIMIT-1;in[1][0][k]==0.0;k--);
-	    in[1][0][0]=temp;
-	    for(i=0;sfBandIndex->l[i]<=k;i++);
-	  }
+          int k;
+          for(k=SSLIMIT; k && in[1][0][--k]==0.0;);
+          for(i=0;sfBandIndex->l[i]<=k;i++);
 	  {
 	    int sfb=i;
 
@@ -1086,12 +1078,8 @@ inline void Mpegtoraw::layer3fixtostereo(int gr,REAL in[2][SBLIMIT][SSLIMIT])
     else // ms-stereo (Part III)
     {
       {
-	REAL temp;
 	int k;
-
-	temp=in[1][0][0];in[1][0][0]=1.0;
-	for(k=ARRAYSIZE-1;in[1][0][k]==0.0;k--);
-	in[1][0][0]=temp;
+	for(k=SSLIMIT-1;k && in[1][0][--k]==0.0;);
 	for(i=0;sfBandIndex->l[i]<=k;i++);
       }
 
