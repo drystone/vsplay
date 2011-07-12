@@ -984,11 +984,15 @@ inline void Mpegtoraw::layer3fixtostereo(int gr,REAL in[2][SBLIMIT][SSLIMIT])
 
 	if(max_sfb<=3)
 	{
-          {
-            int k;
-            for (k = SSLIMIT; k && in[1][0][--k] == 0.0;);
-            for (i = 0; sfBandIndex->l[i] <= k; i++);
-          }
+	  {
+	    REAL temp;
+	    int k;
+
+	    temp=in[1][0][0];in[1][0][0]=1.0;
+	    for(k=3*SSLIMIT-1;in[1][0][k]==0.0;k--);
+	    in[1][0][0]=temp;
+	    for(i=0;sfBandIndex->l[i]<=k;i++);
+	  }
 	  {
 	    int sfb=i;
 
@@ -1080,10 +1084,15 @@ inline void Mpegtoraw::layer3fixtostereo(int gr,REAL in[2][SBLIMIT][SSLIMIT])
     else // ms-stereo (Part III)
     {
       {
-        int k;
-        for (k = SSLIMIT; k && in[1][0][--k] == 0.0;);
-        for (i = 0; sfBandIndex->l[i] <= k; i++);
+	REAL temp;
+	int k;
+
+	temp=in[1][0][0];in[1][0][0]=1.0;
+	for(k=ARRAYSIZE-1;in[1][0][k]==0.0;k--);
+	in[1][0][0]=temp;
+	for(i=0;sfBandIndex->l[i]<=k;i++);
       }
+
       {
 	int sfb;
 
@@ -1127,44 +1136,44 @@ inline void Mpegtoraw::layer3fixtostereo(int gr,REAL in[2][SBLIMIT][SSLIMIT])
 
     if(ms_stereo)
     {
-      for (int i = SSLIMIT; i--;)
-      {
-	if (is_pos[i] == 7)
+      i=ARRAYSIZE-1;
+      do{
+	if(is_pos[i]==7)
 	{
-	  register REAL t = in[LS][0][i];
-	  in[LS][0][i] = (t+in[RS][0][i]) * 0.7071068f;
-	  in[RS][0][i] = (t-in[RS][0][i]) * 0.7071068f;
+	  register REAL t=in[LS][0][i];
+	  in[LS][0][i]=(t+in[RS][0][i])*0.7071068f;
+	  in[RS][0][i]=(t-in[RS][0][i])*0.7071068f;
 	}
 	else
 	{
-	  in[RS][0][i] = in[LS][0][i] * is_ratio[i].r;
-	  in[LS][0][i] *= is_ratio[i].l;
+	  in[RS][0][i]=in[LS][0][i]*is_ratio[i].r;
+	  in[LS][0][i]*=is_ratio[i].l;
 	}
-      }
+      }while(i--);
     }
     else
     {
-      for (int i = SSLIMIT; i--;)
-      {
-	if (is_pos[i] != 7)
+      i=ARRAYSIZE-1;
+      do{
+	if(is_pos[i]!=7)
 	{
-	  in[RS][0][i] = in[LS][0][i] * is_ratio[i].r;
-	  in[LS][0][i] *= is_ratio[i].l;
+	  in[RS][0][i]=in[LS][0][i]*is_ratio[i].r;
+	  in[LS][0][i]*=is_ratio[i].l;
 	}
-      }
+      }while(i--);
     }
   }
   else
   {
     if(ms_stereo)
     {
-      for (int i = SSLIMIT; i--;)
-      {
-	register REAL t = in[LS][0][i];
+      int i=ARRAYSIZE-1;
+      do{
+	register REAL t=in[LS][0][i];
 
-	in[LS][0][i] = (t+in[RS][0][i]) * 0.7071068f;
-	in[RS][0][i] = (t-in[RS][0][i]) * 0.7071068f;
-      }
+	in[LS][0][i]=(t+in[RS][0][i])*0.7071068f;
+	in[RS][0][i]=(t-in[RS][0][i])*0.7071068f;
+      }while(i--);
     }
   }
 
