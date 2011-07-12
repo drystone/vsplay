@@ -984,9 +984,11 @@ inline void Mpegtoraw::layer3fixtostereo(int gr,REAL in[2][SBLIMIT][SSLIMIT])
 
 	if(max_sfb<=3)
 	{
-          int k;
-          for(k=SSLIMIT; k && in[1][0][--k]==0.0;);
-          for(i=0;sfBandIndex->l[i]<=k;i++);
+          {
+            int k;
+            for (k = SSLIMIT; k && in[1][0][--k] == 0.0;);
+            for (i = 0; sfBandIndex->l[i] <= k; i++);
+          }
 	  {
 	    int sfb=i;
 
@@ -1078,11 +1080,10 @@ inline void Mpegtoraw::layer3fixtostereo(int gr,REAL in[2][SBLIMIT][SSLIMIT])
     else // ms-stereo (Part III)
     {
       {
-	int k;
-	for(k=SSLIMIT-1;k && in[1][0][--k]==0.0;);
-	for(i=0;sfBandIndex->l[i]<=k;i++);
+        int k;
+        for (k = SSLIMIT; k && in[1][0][--k] == 0.0;);
+        for (i = 0; sfBandIndex->l[i] <= k; i++);
       }
-
       {
 	int sfb;
 
@@ -1126,44 +1127,44 @@ inline void Mpegtoraw::layer3fixtostereo(int gr,REAL in[2][SBLIMIT][SSLIMIT])
 
     if(ms_stereo)
     {
-      i=ARRAYSIZE-1;
-      do{
-	if(is_pos[i]==7)
+      for (int i = SSLIMIT; i--;)
+      {
+	if (is_pos[i] == 7)
 	{
-	  register REAL t=in[LS][0][i];
-	  in[LS][0][i]=(t+in[RS][0][i])*0.7071068f;
-	  in[RS][0][i]=(t-in[RS][0][i])*0.7071068f;
+	  register REAL t = in[LS][0][i];
+	  in[LS][0][i] = (t+in[RS][0][i]) * 0.7071068f;
+	  in[RS][0][i] = (t-in[RS][0][i]) * 0.7071068f;
 	}
 	else
 	{
-	  in[RS][0][i]=in[LS][0][i]*is_ratio[i].r;
-	  in[LS][0][i]*=is_ratio[i].l;
+	  in[RS][0][i] = in[LS][0][i] * is_ratio[i].r;
+	  in[LS][0][i] *= is_ratio[i].l;
 	}
-      }while(i--);
+      }
     }
     else
     {
-      i=ARRAYSIZE-1;
-      do{
-	if(is_pos[i]!=7)
+      for (int i = SSLIMIT; i--;)
+      {
+	if (is_pos[i] != 7)
 	{
-	  in[RS][0][i]=in[LS][0][i]*is_ratio[i].r;
-	  in[LS][0][i]*=is_ratio[i].l;
+	  in[RS][0][i] = in[LS][0][i] * is_ratio[i].r;
+	  in[LS][0][i] *= is_ratio[i].l;
 	}
-      }while(i--);
+      }
     }
   }
   else
   {
     if(ms_stereo)
     {
-      int i=ARRAYSIZE-1;
-      do{
-	register REAL t=in[LS][0][i];
+      for (int i = SSLIMIT; i--;)
+      {
+	register REAL t = in[LS][0][i];
 
-	in[LS][0][i]=(t+in[RS][0][i])*0.7071068f;
-	in[RS][0][i]=(t-in[RS][0][i])*0.7071068f;
-      }while(i--);
+	in[LS][0][i] = (t+in[RS][0][i]) * 0.7071068f;
+	in[RS][0][i] = (t-in[RS][0][i]) * 0.7071068f;
+      }
     }
   }
 

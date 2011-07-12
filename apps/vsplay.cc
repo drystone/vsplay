@@ -124,6 +124,8 @@ void sigint_capture(int)
 {
   static struct timeval last = {0, 0};
 
+  std::cout << std::endl; // newline after any ^C echo
+
   struct timeval now;
   gettimeofday(&now, NULL);
 
@@ -132,7 +134,9 @@ void sigint_capture(int)
     long diff = (now.tv_sec - last.tv_sec) * 1000 
               + (now.tv_usec - last.tv_usec) / 1000;
     if (diff < 250)
+    {
       exit(EXIT_SUCCESS);
+    }
   }
   last.tv_sec = now.tv_sec;
   last.tv_usec = now.tv_usec;
