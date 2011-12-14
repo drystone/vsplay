@@ -275,7 +275,7 @@ void Mpegtoraw::layer3getsideinfo_2(void)
       gi->block_type      =getbits(2);
       gi->mixed_block_flag=getbit();
 
-      prefetch(5, 2);
+      prefetch(2, 5);
       gi->table_select[0] =fetch();
       gi->table_select[1] =fetch();
 	
@@ -298,7 +298,7 @@ void Mpegtoraw::layer3getsideinfo_2(void)
     }
     else
     {
-      prefetch(5, 3);
+      prefetch(3, 5);
       gi->table_select[0] =fetch();
       gi->table_select[1] =fetch();
       gi->table_select[2] =fetch();
