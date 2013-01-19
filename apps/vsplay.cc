@@ -22,6 +22,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <string>
+#include <vector>
 
 #ifdef TAGLIB
 #include <taglib/tag.h>

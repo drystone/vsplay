@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <limits.h>
+#include <string.h>
 
 #ifdef ALSA
 #include <alsa/asoundlib.h>
